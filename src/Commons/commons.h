@@ -26,6 +26,7 @@ struct ipv6 {
 };
 
 class Packet {
+    // This variable is to track the arrival time
     int arrivalTime;
     ipv4 packet;
 };

@@ -7,7 +7,7 @@ RoutingTable::RoutingTable(std::string routingFile)
     this->routingFile = routingFile;
 
     //TODO
-    //this->loadRoutingTable();
+    this->loadRoutingTable();
 }
 
 
