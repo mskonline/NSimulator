@@ -1,7 +1,14 @@
 #include "network.h"
+#include "Router/router.h"
+
 
 Network::Network()
 {
+}
+
+void Network::setUp()
+{
+    Router *r1 = new Router("r1");
 }
 
 void Network::initiateRoutingTable()

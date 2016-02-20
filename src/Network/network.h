@@ -16,6 +16,7 @@ class Network
         Network();
         ~Network();
 
+        void setUp();
         void initiateRoutingTable();
         void setRoutingSrc(std::string);
         void setInterfaceObj(Interface *);

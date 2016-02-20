@@ -15,6 +15,7 @@ void NSimulator::initiate(){
     network = new Network();
     network->setInterfaceObj(interface);
 
+    network->setUp();
     connect(interface->actionQuit,SIGNAL(triggered(bool)),this,SLOT(closeApp(bool)));
 }
 
