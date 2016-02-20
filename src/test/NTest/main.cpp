@@ -1,6 +1,7 @@
 /*#include <QCoreApplication>
 #include <QFile>
-
+#include <iostream>
+using namespace std;
 struct ipv4 {
     unsigned char addr [20]; // 20 bytes
     int opt_addr[5]; // 20 bytes
@@ -8,13 +9,27 @@ struct ipv4 {
     int data[110]; // 440 bytes
 };
 
+struct test {
+    unsigned char a:4,b:4;
+};
+
 void writeBin();
+void bitTest();
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    writeBin();
+    bitTest();
     return a.exec();
+}
+
+void bitTest()
+{
+    test t;
+    t.a = 2;
+    t.b = 2;
+
+    cout << sizeof(t);
 }
 
 void writeBin()

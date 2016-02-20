@@ -62,7 +62,7 @@ int RoutingTable::lookUp(char destinationAddr[])
             }
 
             // Masking the destination addr in the rTable
-            mask_result = r.destination[j] & r.destinationMask[j];
+            mask_result = r.destination_addr[j] & r.destinationMask[j];
 
             // XOR operation
             xor_result = (mask_result ^ destinationAddr[j]);
