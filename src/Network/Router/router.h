@@ -1,17 +1,23 @@
 #ifndef ROUTER_H
 #define ROUTER_H
-
+#include "../../Interface/interface.h"
 #include <QString>
 
 class Router
 {
+    private:
+        int numInputs;
+        Interface *interface;
+        bool allSet;
+
     public:
         QString name;
-        int numInputs;
-
 
         Router(QString);
-        void setUp();
+        ~Router();
+
+        void setInterfaceObj(Interface *);
+        void initiate();
         void run();
 };
 

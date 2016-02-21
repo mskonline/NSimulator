@@ -44,4 +44,6 @@ struct packet {
     ipv4 packet;
 };
 
+#define NETWORK_SETTINGS "./config/network.ini"
+
 #endif // COMMONS_H

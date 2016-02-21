@@ -1,13 +1,14 @@
 #include "routingtable.h"
 #include <QFile>
 
-RoutingTable::RoutingTable(std::string routingFile)
+RoutingTable::RoutingTable(QString routingFile)
 {
-    routingTable = NULL;
+    this->routingTable = NULL;
     this->routingFile = routingFile;
+    this->rEntrySize = sizeof(Routing);
 
     //TODO
-    //this->loadRoutingTable();
+    this->loadRoutingTable();
 }
 
 
@@ -19,7 +20,7 @@ void RoutingTable::loadRoutingTable()
         routingTable = new QList<Routing>();
 
 
-    QFile f(QString::fromStdString(this->routingFile));
+    QFile f(this->routingFile);
     char *buffer;
     QByteArray ba;
 
@@ -29,8 +30,7 @@ void RoutingTable::loadRoutingTable()
 
     buffer = ba.data();
 
-    int bufferSize = f.size();
-    int rEntrySize = sizeof(Routing);
+    int bufferSize = ba.size();
     int i = 0;
 
     while(i < bufferSize)

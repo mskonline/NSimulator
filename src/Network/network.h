@@ -1,14 +1,21 @@
 #ifndef NETWORK_H
 #define NETWORK_H
+#include "Router/router.h"
 #include "routingtable.h"
 #include "Interface/interface.h"
 
-class Network
+class Network : public QObject
 {
+    Q_OBJECT
     private:
+        QStringList routersList;
+        int numRouters;
+        Router **routers;
 
-    std::string routingSrc;
-    Interface *interface;
+        QString routingSrc;
+        Interface *interface;
+
+        bool isRunning;
 
     public:
         RoutingTable *rTable;
@@ -16,10 +23,14 @@ class Network
         Network();
         ~Network();
 
-        void setUp();
+        void initiate();
         void initiateRoutingTable();
-        void setRoutingSrc(std::string);
+        void setRoutingSrc(QString);
         void setInterfaceObj(Interface *);
+
+    public slots:
+
+        void run();
 };
 
 #endif // NETWORK_H

@@ -10,9 +10,6 @@ int main(int argc, char *argv[])
     ns->initiate();
 
     ns->interface->log("Network Initiated...");
-    ns->network->setRoutingSrc("W:/Test/rtable.bin");
-    ns->network->initiateRoutingTable();
-
 
     return app.exec();
 }

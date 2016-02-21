@@ -3,20 +3,20 @@
 
 NSimulator::NSimulator()
 {
-
 }
 
 void NSimulator::initiate(){
 
     interface = new Interface();
     interface->show();
-    interface->log("Welcome to NSimulator");
+    interface->log("Welcome to NSimulator...");
 
     network = new Network();
     network->setInterfaceObj(interface);
+    network->initiate();
 
-    network->setUp();
     connect(interface->actionQuit,SIGNAL(triggered(bool)),this,SLOT(closeApp(bool)));
+    connect(interface->pb_run,SIGNAL(released()),network,SLOT(run()));
 }
 
 void NSimulator::closeApp(bool a)
