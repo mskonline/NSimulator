@@ -1,7 +1,6 @@
 /*#include <QCoreApplication>
 #include <QFile>
-#include <iostream>
-using namespace std;
+
 struct ipv4 {
     unsigned char addr [20]; // 20 bytes
     int opt_addr[5]; // 20 bytes
@@ -9,27 +8,13 @@ struct ipv4 {
     int data[110]; // 440 bytes
 };
 
-struct test {
-    unsigned char a:4,b:4;
-};
-
 void writeBin();
-void bitTest();
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    bitTest();
+    writeBin();
     return a.exec();
-}
-
-void bitTest()
-{
-    test t;
-    t.a = 2;
-    t.b = 2;
-
-    cout << sizeof(t);
 }
 
 void writeBin()
@@ -54,21 +39,107 @@ void writeBin()
 #include<QTextStream>
 #include<QBuffer>
 #include<QQueue>
+#include<QByteArray>
+#include<iostream>
+using namespace std;
 
+struct ipv4 {
+    unsigned char addr [20]; // 20 bytes
+    int opt_addr[5]; // 20 bytes
+    int header[5]; // 20 bytes
+    int data[110]; // 440 bytes
+};
 
 void  Write(QString Filename) //writing into buffer
 {
 
-    QFile mfile(Filename);
-    if(!mfile.open(QFile::WriteOnly | QFile::Truncate))
+    QFile mfile1(Filename);
+    QFile mfile2(Filename);
+    QFile mfile3(Filename);
+
+    QQueue<unsigned char> q1;
+    QQueue<unsigned char> q2;
+    QQueue<unsigned char> q3;
+
+    q1 = new QList<ipv4>();
+
+
+    if(!mfile1.open(QFile::ReadOnly))
     {
         qDebug() << "No Such File";
         return;
     }
 
+    if(!mfile2.open(QFile::ReadOnly))
+    {
+        qDebug() << "No Such File";
+        return;
+    }
+    if(!mfile3.open(QFile::ReadOnly))
+    {
+        qDebug() << "No Such File";
+        return;
+    }
 
-    QQueue queue;
-    queue.enqueue(mfile.readAll());
+    char *buffer1;
+    char *buffer2;
+    char *buffer3;
+
+
+    QByteArray ba1;
+    QByteArray ba2;
+    QByteArray ba3;
+
+     ba1 = mfile.readAll();//putting into bytearray
+     ba2 = mfile.readAll();
+     ba3 = mfile.readAll();
+
+
+    int np1 = ba1.size()/500; // number of packets
+    int np2 = ba2.size()/500;
+    int np3 = ba3.size()/500;
+
+    int tsize= ba1.size()+ ba2.size()+ ba3.size(); // total packets
+
+    buffer1 = ba1.data();
+    buffer2 = ba2.data();
+    buffer3 = ba3.data();
+
+
+    for(i=0;i<tsize;i++)
+    {
+
+        for(int i=0;i<buffer2.size();i=i+499)
+             {
+                 ipv4 ip;
+                 memcpy(&ip,buffer1,i+500);
+                 //QQueue q1;
+                   q1.enqueue(ip);
+                }
+
+        for(int i=0;i<buffer2.size();i=i+499)
+             {
+                 ipv4 ip;
+                 memcpy(&ip,buffer2,i+500);
+                 //QQueue q2;
+                   q2.enqueue(ip);
+                }
+
+        for(int i=0;i<buffer3.size();i=i+499)
+             {
+                 ipv4 ip;
+                 memcpy(&ip,buffer3,i+500);
+                 //QQueue q3;
+                   q3.enqueue(ip);
+                }
+
+
+     }
+
+
+
+   // QQueue queue;
+    //queue.enqueue(mfile.readAll());
 
 
     mfile.flush();
@@ -94,7 +165,7 @@ void  Write(QString Filename) //writing into buffer
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    QString mFilename = "E:/QT coding/Qt.bin"; //path of file
+    QString mFilename = "E:/link1flow"; //path of file
     Write(mFilename);
    // Read(mFilename);
 
