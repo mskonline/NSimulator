@@ -143,6 +143,10 @@ void Router::run()
                     break;
 
 
+                //R=(pk_count+num_input_packets);
+                //sum+=R
+
+
                 packet p = outQueues[nQ]->dequeue();
 
 
@@ -166,6 +170,9 @@ void Router::run()
             nQ = nQ % numOutputs;
             pk_count += oP;
         }
+        //r=R/sum;
+
+
 
         // meanTr= totalTime/count;
         // cout << meanTr;
