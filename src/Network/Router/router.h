@@ -6,28 +6,36 @@
 #include <QString>
 #include <QStringList>
 #include <QFile>
+#include <QMutex>
 
 class InputAdaptor;
 
-class Router
+class Router: public QThread
 {
     private:
-        QQueue<packet> **inpQueues;
-        QQueue<packet> **outQueues;
-        QFile **oFiles;
-
         int numInputs,
             numOutputs,
             num_input_packets,
             num_output_packets,
+            pProcessed,
             *input_rates,
             *output_rates;
 
-        RoutingTable *routingTable;
+        QString routingTable;
         QStringList inputFiles;
         QStringList outputFiles;
         Interface *interface;
         bool allSet;
+
+        // Threading
+        QMutex mutex;
+        InputAdaptor **inpAdaptors;
+        OutputAdaptor **outAdaptors;
+
+        bool allPacketsProcessed;
+        int totalInputPackets;
+        int nCount;
+
     public:
         QString name;
 
@@ -35,10 +43,12 @@ class Router
         ~Router();
 
         void setInterfaceObj(Interface *);
-        void setRoutingTable(RoutingTable *);
+        void setRoutingTable(QString);
         void initiate();
         void fabric(packet,int,int);
+        void notify(int);
         void run();
+        void stop();
 };
 
 #endif // ROUTER_H
