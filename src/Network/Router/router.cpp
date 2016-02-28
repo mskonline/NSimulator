@@ -142,13 +142,34 @@ void Router::run()
                 if(outQueues[nQ]->count() == 0)
                     break;
 
+
                 packet p = outQueues[nQ]->dequeue();
+
+
+
+                /*p.depTime= std::time(0);
+                resTime=p.depTime-p.arrivalTime; //residence time of packet
+                totalTime=p.totalTime+p.resTime // p.totalTime is initially NULL
+                count++ // no of packets
+                 if(maxTR<resTime)                //maxTR is initially NULL
+                    {
+                        maxTR=resTime;
+
+                    }
+
+
+
+                    */
                 oFiles[nQ]->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
             }
             ++nQ;
             nQ = nQ % numOutputs;
             pk_count += oP;
         }
+
+        // meanTr= totalTime/count;
+        // cout << meanTr;
+        // cout << maxTR;
 
         for(int i = 0; i < numOutputs; ++i){
             oFiles[i]->flush();
