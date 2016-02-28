@@ -17,6 +17,7 @@ void NSimulator::initiate(){
 
     connect(interface->pb_quit,SIGNAL(released()),this,SLOT(closeApp()));
     connect(interface->pb_run,SIGNAL(released()),network,SLOT(run()));
+    connect(interface->pb_stop,SIGNAL(released()),network,SLOT(stop()));
 }
 
 void NSimulator::closeApp()
