@@ -24,13 +24,12 @@ class Network : public QObject
         ~Network();
 
         void initiate();
-        void initiateRoutingTable();
-        void setRoutingSrc(QString);
         void setInterfaceObj(Interface *);
 
     public slots:
 
         void run();
+        void stop();
 };
 
 #endif // NETWORK_H

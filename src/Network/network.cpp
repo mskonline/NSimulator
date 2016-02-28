@@ -17,7 +17,6 @@ void Network::initiate()
 
     delete settings;
 
-    this->initiateRoutingTable();
     this->numRouters = this->routersList.count();
 
     routers = new Router*[this->numRouters];
@@ -25,20 +24,11 @@ void Network::initiate()
     for(int i = 0; i < this->numRouters; ++i){
         routers[i] = new Router(this->routersList.at(i));
         routers[i]->setInterfaceObj(this->interface);
+        routers[i]->setRoutingTable(this->routingSrc);
         routers[i]->initiate();
-        routers[i]->setRoutingTable(rTable);
     }
 
     interface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));
-}
-
-void Network::initiateRoutingTable()
-{
-    rTable = new RoutingTable(this->routingSrc);
-    interface->log("Routing table Initiated...");
-
-    interface->log(QString("Total Routing entries : %1")
-                   .arg(rTable->getRoutingEntriesCount()));
 }
 
 void Network::run()
@@ -50,15 +40,16 @@ void Network::run()
         isRunning = true;
 
         for(int i = 0; i < numRouters; ++i)
-            routers[i]->run();
+            routers[i]->start();
 
         isRunning = false;
     }
 }
 
-void Network::setRoutingSrc(QString routingSrc)
+void Network::stop()
 {
-    this->routingSrc = routingSrc;
+    for(int i = 0; i < numRouters; ++i)
+        routers[i]->stop();
 }
 
 void Network::setInterfaceObj(Interface *interface)
