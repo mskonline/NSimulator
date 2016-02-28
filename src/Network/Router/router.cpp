@@ -1,5 +1,6 @@
 #include "router.h"
 #include "Commons/commons.h"
+#include "inputadaptor.h"
 #include <QSettings>
 #include <QFile>
 #include <QByteArray>
@@ -13,6 +14,10 @@ Router::Router(QString name)
 {
     this->name = name;
     this->allSet = false;
+    pProcessed = 0;
+    totalInputPackets = 0;
+    nCount = 0;
+    allPacketsProcessed = false;
 }
 
 void Router::initiate()
@@ -49,119 +54,79 @@ void Router::initiate()
 
     allSet = true;
     interface->log("Router " + name + " initiated");
+
+    // Initiate the Input and Output adaptors
+    inpAdaptors = new InputAdaptor*[numInputs];
+    outAdaptors = new OutputAdaptor*[numOutputs];
+
+    for(int i = 0; i < numInputs; ++i)
+        inpAdaptors[i] = new InputAdaptor(this, input_rates[i], routingTable, this->inputFiles.at(i));
+
+    for(int i = 0; i < numOutputs; ++i)
+        outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i]);
 }
 
 void Router::run()
 {
-    if(allSet){
-        interface->log("Router " + name + " running");
+    for(int i = 0; i < numOutputs; ++i)
+       outAdaptors[i]->start();
 
-        inpQueues = new QQueue<packet>*[numInputs];
-        num_input_packets = 0;
+    for(int i = 0; i < numInputs; ++i)
+       inpAdaptors[i]->start();
 
-        for(int i = 0; i < numInputs; ++i){
-            inpQueues[i] = new QQueue<packet>();
-
-            QFile f(this->inputFiles.at(i));
-
-            if(!f.open(QFile::ReadOnly))
-            {
-                qDebug() << "No Such File";
-                return;
-            }
-
-            char *buffer;
-            QByteArray ba;
-
-            ba = f.readAll();
-            buffer = ba.data();
-            num_input_packets += (ba.size()/PACKET_SIZE);
-            int j = 0;
-
-            while(j < ba.size())
-            {
-                packet p;
-                memcpy(&p.packetv4, buffer, PACKET_SIZE);
-                p.arrivalTime = std::time(0);
-                inpQueues[i]->enqueue(p);
-
-                buffer += PACKET_SIZE;
-                j += PACKET_SIZE;
-            }
-
-            delete buffer;
-        }
-
-        outQueues = new QQueue<packet>*[numOutputs];
-        for(int i = 0; i < numOutputs; ++i)
-            outQueues[i] = new QQueue<packet>();
-
-        // For all packets on input side
-        int pk_count = 0;
-        int iP, nQ = 0;
-
-        while(pk_count < num_input_packets)
+    while(1)
+    {
+        if(!allPacketsProcessed)
         {
-            for(iP = 0; iP <= input_rates[nQ]; ++iP)
-            {
-                if(inpQueues[nQ]->count() == 0)
-                    break;
-
-                packet p = inpQueues[nQ]->dequeue();
-
-                int oPort = routingTable->lookUp(p.packetv4.destination_addr);
-                --oPort;
-                outQueues[oPort]->enqueue(p);
-            }
-            ++nQ;
-            nQ = nQ % numInputs;
-            pk_count += iP;
+            sleep(1);
+            continue;
         }
-
-        oFiles = new QFile*[numOutputs];
-
-        for(int i = 0; i < numOutputs; ++i){
-            oFiles[i] = new QFile(this->outputFiles.at(i));
-
-            if(!oFiles[i]->open(QFile::WriteOnly | QFile::Truncate))
-            {
-                qDebug() << "No Such File";
-                return;
-            }
-        }
-
-        pk_count = 0;
-        nQ = 0;
-        int oP;
-
-        // For all packets on output side
-        while(pk_count < num_input_packets)
-        {
-            for(oP = 0; oP <= output_rates[nQ]; ++oP)
-            {
-                if(outQueues[nQ]->count() == 0)
-                    break;
-
-                packet p = outQueues[nQ]->dequeue();
-                oFiles[nQ]->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
-            }
-            ++nQ;
-            nQ = nQ % numOutputs;
-            pk_count += oP;
-        }
-
-        for(int i = 0; i < numOutputs; ++i){
-            oFiles[i]->flush();
-            oFiles[i]->close();
-        }
+        break;
     }
 
-    interface->log("Router " + name + " finished processing.");
+
+    while(1){
+        pProcessed = 0;
+        for(int i = 0; i < numOutputs; ++i)
+           pProcessed += outAdaptors[i]->numPacketsProcessed;
+
+        if(pProcessed == totalInputPackets)
+        {
+            for(int i = 0; i < numOutputs; ++i)
+                outAdaptors[i]->terminate();
+            break;
+        }
+        sleep(.5);
+    }
+
+    interface->log("Router " + name + " finished");
+    interface->log(QString("Total packets processed : %1").arg(this->pProcessed));
+}
+
+void Router::stop()
+{
+    for(int i = 0; i < numOutputs; ++i)
+       outAdaptors[i]->terminate();
+
+    for(int i = 0; i < numInputs; ++i)
+        inpAdaptors[i]->terminate();
+
 }
 
 void Router::fabric(packet p,int pNo,int qNo)
 {
+    mutex.lock();
+        outAdaptors[pNo]->putPacket(p);
+    mutex.unlock();
+}
 
+void Router::notify(int nPackets)
+{
+    ++nCount;
+    totalInputPackets += nPackets;
+
+    if(nCount == 3)
+        allPacketsProcessed = true;
 }
 
 void Router::setInterfaceObj(Interface *interface)
@@ -169,8 +134,8 @@ void Router::setInterfaceObj(Interface *interface)
     this->interface = interface;
 }
 
-void Router::setRoutingTable(RoutingTable *rTable){
-    this->routingTable = rTable;
+void Router::setRoutingTable(QString rSrc){
+    this->routingTable = rSrc;
 }
 
 Router::~Router()
