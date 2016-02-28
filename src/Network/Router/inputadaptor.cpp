@@ -3,17 +3,22 @@
 #include <QQueue>
 #include <ctime>
 
-InputAdaptor::InputAdaptor(Router *r)
+#include <QDebug>
+
+InputAdaptor::InputAdaptor(Router *r, int rate, QString rtSrc)
 {
     this->r = r;
+    this->inputRate = rate;
+    routingTable = new RoutingTable(rtSrc);
 }
 
-InputAdaptor::InputAdaptor(Router *r, QString file)
+InputAdaptor::InputAdaptor(Router *r, int rate, QString rtSrc, QString file)
 {
     this->r = r;
+    this->inputRate = rate;
     this->loadQueue(file);
+    routingTable = new RoutingTable(rtSrc);
 }
-
 
 void InputAdaptor::loadQueue(QString srcFile)
 {
@@ -48,16 +53,21 @@ void InputAdaptor::loadQueue(QString srcFile)
 
 void InputAdaptor::run()
 {
-    int pk = 0, port;
+    int port;
+    float slp = inputRate / 10.0;
     while(1)
     {
-        for(int i=0; i < inputRate; ++i)
-        {
-            if(inpQueue.isEmpty())
-                break;
-            packet p = inpQueue.dequeue();
-            r->fabric(p,port,0);
-        }
-        sleep(.2);
+        if(inpQueue.isEmpty())
+            break;
+
+        packet p = inpQueue.dequeue();
+        port = routingTable->lookUp(p.packetv4.destination_addr);
+        --port;
+        r->fabric(p,port,0);
+
+        sleep(slp);
     }
+
+    r->notify(num_input_packets);
+    qDebug() << "IAdaptor finished";
 }

@@ -17,8 +17,8 @@ class InputAdaptor: public QThread
         QQueue<packet> inpQueue;
         RoutingTable *routingTable;
 
-        InputAdaptor(Router *);
-        InputAdaptor(Router *,QString);
+        InputAdaptor(Router *, int, QString);
+        InputAdaptor(Router *, int, QString, QString);
         void loadQueue(QString);
         void run();
 };
