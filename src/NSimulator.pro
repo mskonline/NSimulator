@@ -11,7 +11,11 @@ SOURCES += \
     Network/Router/router.cpp \
     Network/network.cpp \
     nsimulator.cpp \
-    Network/routingtable.cpp
+    Network/routingtable.cpp \
+    Network/Router/inputadaptor.cpp \
+    Network/Router/outputadaptor.cpp \
+    Network/link.cpp \
+    Utils/nutils.cpp
 
 
 win32:UI_DIR = temp/ui
@@ -27,7 +31,11 @@ HEADERS += \
     Network/Router/router.h \
     Network/network.h \
     nsimulator.h \
-    Network/routingtable.h
+    Network/routingtable.h \
+    Network/Router/inputadaptor.h \
+    Network/Router/outputadaptor.h \
+    Network/link.h \
+    Utils/nutils.h
 
 RESOURCES += \
     resources/resources.qrc

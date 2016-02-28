@@ -8,14 +8,15 @@ class RoutingTable
 {
     public:
         QList<Routing> *routingTable;
-        std::string routingFile;
+        QString routingFile;
 
-        RoutingTable(std::string);
+        RoutingTable(QString);
         ~RoutingTable();
 
         int getRoutingEntriesCount();
-        int lookUp(char []);
+        int lookUp(unsigned char []);
     private:
+        int rEntrySize;
 
         void loadRoutingTable();
 };

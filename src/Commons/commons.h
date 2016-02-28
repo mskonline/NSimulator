@@ -41,7 +41,17 @@ struct ipv6 {
 
 struct packet {
     int arrivalTime;
-    ipv4 packet;
+    int version;
+    ipv4 packetv4;
+    ipv6 packetv6;
 };
+
+struct generic_packet{
+    int version:4, extra:28; // 1 Byte
+    unsigned char data[499]; // 499 Bytes
+};
+
+#define NETWORK_SETTINGS "./config/network.ini"
+#define PACKET_SIZE 500
 
 #endif // COMMONS_H

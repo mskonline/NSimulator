@@ -1,26 +1,62 @@
 #include "network.h"
-#include "Router/router.h"
-
+#include <QSettings>
 
 Network::Network()
 {
+    isRunning = false;
 }
 
-void Network::setUp()
+void Network::initiate()
 {
-    Router *r1 = new Router("r1");
+    QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
+
+    settings->beginGroup("Network");
+        this->routersList = settings->value("routers").toString().split(":");
+        this->routingSrc = settings->value("routingtable").toString();
+    settings->endGroup();
+
+    delete settings;
+
+    this->initiateRoutingTable();
+    this->numRouters = this->routersList.count();
+
+    routers = new Router*[this->numRouters];
+
+    for(int i = 0; i < this->numRouters; ++i){
+        routers[i] = new Router(this->routersList.at(i));
+        routers[i]->setInterfaceObj(this->interface);
+        routers[i]->initiate();
+        routers[i]->setRoutingTable(rTable);
+    }
+
+    interface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));
 }
 
 void Network::initiateRoutingTable()
 {
     rTable = new RoutingTable(this->routingSrc);
-    interface->log("Routing Table Initiated...");
+    interface->log("Routing table Initiated...");
 
     interface->log(QString("Total Routing entries : %1")
                    .arg(rTable->getRoutingEntriesCount()));
 }
 
-void Network::setRoutingSrc(std::string routingSrc)
+void Network::run()
+{
+    interface->log("Running the network...");
+
+    if(!isRunning)
+    {
+        isRunning = true;
+
+        for(int i = 0; i < numRouters; ++i)
+            routers[i]->run();
+
+        isRunning = false;
+    }
+}
+
+void Network::setRoutingSrc(QString routingSrc)
 {
     this->routingSrc = routingSrc;
 }
