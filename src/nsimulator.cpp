@@ -15,11 +15,11 @@ void NSimulator::initiate(){
     network->setInterfaceObj(interface);
     network->initiate();
 
-    connect(interface->actionQuit,SIGNAL(triggered(bool)),this,SLOT(closeApp(bool)));
+    connect(interface->pb_quit,SIGNAL(released()),this,SLOT(closeApp()));
     connect(interface->pb_run,SIGNAL(released()),network,SLOT(run()));
 }
 
-void NSimulator::closeApp(bool a)
+void NSimulator::closeApp()
 {
     // TODO :tear down network
     delete network;

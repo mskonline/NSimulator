@@ -14,7 +14,7 @@ class RoutingTable
         ~RoutingTable();
 
         int getRoutingEntriesCount();
-        int lookUp(char []);
+        int lookUp(unsigned char []);
     private:
         int rEntrySize;
 

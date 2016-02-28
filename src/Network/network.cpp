@@ -26,6 +26,7 @@ void Network::initiate()
         routers[i] = new Router(this->routersList.at(i));
         routers[i]->setInterfaceObj(this->interface);
         routers[i]->initiate();
+        routers[i]->setRoutingTable(rTable);
     }
 
     interface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));

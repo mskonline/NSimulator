@@ -7,7 +7,6 @@ RoutingTable::RoutingTable(QString routingFile)
     this->routingFile = routingFile;
     this->rEntrySize = sizeof(Routing);
 
-    //TODO
     this->loadRoutingTable();
 }
 
@@ -44,7 +43,7 @@ void RoutingTable::loadRoutingTable()
     }
 }
 
-int RoutingTable::lookUp(char destinationAddr[])
+int RoutingTable::lookUp(unsigned char destinationAddr[])
 {
     int longestMatchEntry = 0;
     int matchCount = 0;

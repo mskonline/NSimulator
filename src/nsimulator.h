@@ -18,7 +18,7 @@ class NSimulator: public QObject
 
     public slots:
 
-        void closeApp(bool);
+        void closeApp();
 };
 
 #endif // NSIMULATOR_H
