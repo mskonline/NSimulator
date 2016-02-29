@@ -29,10 +29,11 @@ void InputAdaptor::loadQueue(QString srcFile)
         return;
     }
 
-    char *buffer;
+
     QByteArray ba;
 
     ba = f.readAll();
+    char *buffer = new char[ba.size()];
     buffer = ba.data();
     num_input_packets = (ba.size()/PACKET_SIZE);
     int j = 0;
@@ -48,24 +49,33 @@ void InputAdaptor::loadQueue(QString srcFile)
         j += PACKET_SIZE;
     }
 
-    delete buffer;
+  //  delete buffer;
 }
 
 void InputAdaptor::run()
 {
     int port;
-    float slp = inputRate / 10.0;
+    processedPackets = 0;
+
     while(1)
     {
         if(inpQueue.isEmpty())
             break;
 
-        packet p = inpQueue.dequeue();
-        port = routingTable->lookUp(p.packetv4.destination_addr);
-        --port;
-        r->fabric(p,port,0);
+        for(int i=0; i < inputRate; ++i)
+        {
+            if(inpQueue.isEmpty())
+                break;
 
-        sleep(slp);
+            packet p = inpQueue.dequeue();
+
+            port = routingTable->lookUp(p.packetv4.destination_addr);
+            --port;
+            r->fabric(p,port,0);
+            ++processedPackets;
+        }
+
+        msleep(5);
     }
 
     r->notify(num_input_packets);

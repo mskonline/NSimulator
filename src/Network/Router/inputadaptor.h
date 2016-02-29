@@ -11,6 +11,7 @@ class InputAdaptor: public QThread
 {
     public:
         int inputRate,
+            processedPackets,
             num_input_packets;
 
         Router *r;

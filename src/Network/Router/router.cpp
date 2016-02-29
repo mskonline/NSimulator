@@ -68,6 +68,11 @@ void Router::initiate()
 
 void Router::run()
 {
+    nCount = totalInputPackets = pProcessed = 0;
+    int total_residence_time = 0 ,maxTime = 0;
+    float meanResidenceTime = 0;
+
+
     for(int i = 0; i < numOutputs; ++i)
        outAdaptors[i]->start();
 
@@ -84,14 +89,53 @@ void Router::run()
         break;
     }
 
+    qDebug() << "All packets processed on the input side" << totalInputPackets;
 
     while(1){
         pProcessed = 0;
         for(int i = 0; i < numOutputs; ++i)
-           pProcessed += outAdaptors[i]->numPacketsProcessed;
+           pProcessed += outAdaptors[i]->processedPackets;
 
         if(pProcessed == totalInputPackets)
         {
+            int t_residentItems = 0;
+            // Mean Residence Time
+            for(int i = 0; i < numOutputs; ++i) {
+                 for(int j = 0; j < outAdaptors[i]->residenceTime.size(); ++j)
+                    total_residence_time += outAdaptors[i]->residenceTime[j];
+
+                 t_residentItems += outAdaptors[i]->residenceTime.size();
+            }
+
+            meanResidenceTime = (float) total_residence_time / t_residentItems;
+
+            // Max Residence Time
+            for(int i = 0; i < numOutputs; ++i) {
+                 for(int j = 0; j < outAdaptors[i]->residenceTime.size(); ++j){
+                    if(outAdaptors[i]->residenceTime[j] >= maxTime)
+                        maxTime = outAdaptors[i]->residenceTime[j];
+                 }
+            }
+
+            int totalN, maxN;
+
+            for(int i = 0; i < numOutputs; ++i) {
+                 totalN = maxN = 0;
+                 for(int j = 0; j < outAdaptors[i]->itemsInQ.size(); ++j){
+                    totalN += outAdaptors[i]->itemsInQ[j];
+
+                    if(outAdaptors[i]->itemsInQ[j] >= maxN)
+                        maxN = outAdaptors[i]->itemsInQ[j];
+                 }
+
+                 if(totalN == 0)
+                    meanNumResidentItems.push_back(0);
+                 else
+                    meanNumResidentItems.push_back(totalN / outAdaptors[i]->itemsInQ.size());
+
+                 maxNumResidentItems.push_back(maxN);
+            }
+
             for(int i = 0; i < numOutputs; ++i)
                 outAdaptors[i]->terminate();
             break;
@@ -101,6 +145,25 @@ void Router::run()
 
     interface->log("Router " + name + " finished");
     interface->log(QString("Total packets processed : %1").arg(this->pProcessed));
+
+    // Logging
+    for(int i = 0; i < numInputs; ++i)
+        interface->log(QString("Total packets processed at input %1 : %2").arg(i).arg(inpAdaptors[i]->processedPackets));
+
+    for(int i = 0; i < numOutputs; ++i)
+        interface->log(QString("Total packets processed at output %1 : %2").arg(i).arg(outAdaptors[i]->processedPackets));
+
+    for(int i = 0; i < numOutputs; ++i)
+        interface->log(QString("Mean # of packets at output %1 : %2").arg(i).arg(meanNumResidentItems[i]));
+
+    for(int i = 0; i < numOutputs; ++i)
+        interface->log(QString("Max # of packets at output %1 : %2").arg(i).arg(maxNumResidentItems[i]));
+
+    interface->log(QString("Mean Residence Time : %1 msecs").arg(meanResidenceTime));
+    interface->log(QString("Max Residence Time : %1 msecs").arg(maxTime));
+    interface->log("Router " + name + " finished");
+
+    interface->update();
 }
 
 void Router::stop()
@@ -111,6 +174,7 @@ void Router::stop()
     for(int i = 0; i < numInputs; ++i)
         inpAdaptors[i]->terminate();
 
+    this->terminate();
 }
 
 void Router::fabric(packet p,int pNo,int qNo)

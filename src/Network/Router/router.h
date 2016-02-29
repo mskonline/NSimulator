@@ -21,6 +21,8 @@ class Router: public QThread
             *input_rates,
             *output_rates;
 
+        std::vector<int> meanNumResidentItems,maxNumResidentItems;
+
         QString routingTable;
         QStringList inputFiles;
         QStringList outputFiles;

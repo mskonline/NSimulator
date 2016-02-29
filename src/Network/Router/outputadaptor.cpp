@@ -2,15 +2,14 @@
 #include <QQueue>
 #include <QFile>
 #include <QDebug>
+#include <ctime>
 
 OutputAdaptor::OutputAdaptor()
 {
-    numPacketsProcessed = 0;
 }
 
 OutputAdaptor::OutputAdaptor(QString file,int rate)
 {
-    numPacketsProcessed = 0;
     outputRate = rate;
     outFile = new QFile(file);
 
@@ -20,29 +19,44 @@ OutputAdaptor::OutputAdaptor(QString file,int rate)
 
 void OutputAdaptor::run()
 {
-    float slp = outputRate / 10.0;
+    processedPackets = 0;
+    int calcTime;
+
     while(1)
     {
         if(outQueue.count() == 0)
         {
-            sleep(slp);
+            sleep(.5);
             continue;
         }
 
-        mutex.lock();
-            packet p = outQueue.dequeue();
-        mutex.unlock();
-        outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
-        ++numPacketsProcessed;
+        itemsInQ.push_back(outQueue.size());
 
-        sleep(slp);
+        for(int i=0; i < outputRate; ++i)
+        {
+            if(outQueue.isEmpty())
+                break;
+
+            mutex.lock();
+                packet p = outQueue.dequeue();
+            mutex.unlock();
+
+            // Residence Time
+            calcTime = std::time(0) - p.arrivalTime;
+            residenceTime.push_back(calcTime);
+
+            outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
+            ++processedPackets;
+        }
+
+        msleep(5);
     }
 }
 
 void OutputAdaptor::terminate()
 {
     outFile->flush();
-    outFile->close();
+    outFile->close();  
     qDebug() << "OAdaptor finished";
 
     QThread::terminate();
