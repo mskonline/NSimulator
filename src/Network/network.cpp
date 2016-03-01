@@ -59,5 +59,4 @@ void Network::setInterfaceObj(Interface *interface)
 
 Network::~Network()
 {
-    delete rTable;
 }

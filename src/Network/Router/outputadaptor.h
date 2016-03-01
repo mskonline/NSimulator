@@ -17,7 +17,7 @@ class OutputAdaptor: public QThread
             processedPackets;
 
         QFile *outFile;
-        QMutex mutex;
+        QMutex oMutex;
         OutputAdaptor();
         OutputAdaptor(QString,int);
         ~OutputAdaptor();

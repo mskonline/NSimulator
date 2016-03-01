@@ -29,7 +29,6 @@ void InputAdaptor::loadQueue(QString srcFile)
         return;
     }
 
-
     QByteArray ba;
 
     ba = f.readAll();
@@ -75,7 +74,7 @@ void InputAdaptor::run()
             ++processedPackets;
         }
 
-        msleep(5);
+        msleep(50);
     }
 
     r->notify(num_input_packets);

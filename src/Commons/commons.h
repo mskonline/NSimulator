@@ -5,11 +5,12 @@ struct Routing
 {
     unsigned char source_addr[4];
     unsigned char destination_addr[4];
-    unsigned char destinationMask[4];
+    unsigned char destination_mask[4];
     unsigned char nextRouterHop[4];
     unsigned char outputPort[1];
     unsigned char outputPortQ[1];
-    unsigned char future[4];
+    unsigned char dscp[1];
+    unsigned char padding[3];
 };
 
 struct ipv4 {
@@ -53,5 +54,7 @@ struct generic_packet{
 
 #define NETWORK_SETTINGS "./config/network.ini"
 #define PACKET_SIZE 500
+#define ROUTING_ENTRY_SIZE sizeof(Routing)
+
 
 #endif // COMMONS_H

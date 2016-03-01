@@ -18,8 +18,6 @@ class Network : public QObject
         bool isRunning;
 
     public:
-        RoutingTable *rTable;
-
         Network();
         ~Network();
 

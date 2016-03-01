@@ -30,7 +30,7 @@ class Router: public QThread
         bool allSet;
 
         // Threading
-        QMutex mutex;
+        QMutex *mutex;
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
 

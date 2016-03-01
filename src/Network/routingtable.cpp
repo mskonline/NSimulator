@@ -1,5 +1,6 @@
 #include "routingtable.h"
 #include <QFile>
+#include <iostream>
 
 RoutingTable::RoutingTable(QString routingFile)
 {
@@ -35,7 +36,7 @@ void RoutingTable::loadRoutingTable()
     while(i < bufferSize)
     {
         Routing r;
-        memcpy(&r, buffer, 22);
+        memcpy(&r, buffer, ROUTING_ENTRY_SIZE);
         routingTable->append(r);
 
         buffer += rEntrySize;
@@ -46,22 +47,23 @@ void RoutingTable::loadRoutingTable()
 int RoutingTable::lookUp(unsigned char destinationAddr[])
 {
     int longestMatchEntry = 0;
-    int matchCount = 0;
+    int matchCount;
     unsigned char longestMatch = 0;
     unsigned char mask_result, xor_result;
 
     for(int i = 0; i < routingTable->size(); ++i)
     {
+        matchCount = 0;
         Routing r = routingTable->at(i);
 
-        for(int j = 0; j < sizeof(r.destinationMask); ++j){
+        for(int j = 0; j < sizeof(r.destination_mask); ++j){
 
-            if(r.destinationMask[j] == 0){
+            if(r.destination_mask[j] == 0){
                 break;
             }
 
             // Masking the destination addr in the rTable
-            mask_result = r.destination_addr[j] & r.destinationMask[j];
+            mask_result = r.destination_addr[j] & r.destination_mask[j];
 
             // XOR operation
             xor_result = (mask_result ^ destinationAddr[j]);
@@ -91,12 +93,9 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
             longestMatchEntry = i;
             longestMatch = matchCount;
         }
-
-        matchCount = 0;
     }
 
     return routingTable->at(longestMatchEntry).outputPort[0];
-
 }
 
 int RoutingTable::getRoutingEntriesCount()

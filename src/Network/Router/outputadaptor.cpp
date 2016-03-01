@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <ctime>
 
-OutputAdaptor::OutputAdaptor()
+OutputAdaptor::OutputAdaptor():oMutex(QMutex::Recursive)
 {
 }
 
@@ -37,9 +37,9 @@ void OutputAdaptor::run()
             if(outQueue.isEmpty())
                 break;
 
-            mutex.lock();
+            QMutexLocker m(&oMutex);
                 packet p = outQueue.dequeue();
-            mutex.unlock();
+            m.unlock();
 
             // Residence Time
             calcTime = std::time(0) - p.arrivalTime;
@@ -49,7 +49,7 @@ void OutputAdaptor::run()
             ++processedPackets;
         }
 
-        msleep(5);
+        msleep(50);
     }
 }
 
@@ -64,13 +64,11 @@ void OutputAdaptor::terminate()
 
 void OutputAdaptor::putPacket(packet p)
 {
-    mutex.lock();
-        outQueue.enqueue(p);
-    mutex.unlock();
+   QMutexLocker m(&oMutex);
+   outQueue.enqueue(p);
 }
 
 OutputAdaptor::~OutputAdaptor()
 {
-
 }
 
