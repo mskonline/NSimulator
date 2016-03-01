@@ -1,0 +1,28 @@
+[17:59:18] Welcome to NSimulator...
+[17:59:18] Router r1 initiated
+[17:59:18] Rate for Input 1 : 5
+[17:59:18] Rate for Input 2 : 8
+[17:59:18] Rate for Input 3 : 5
+[17:59:18] Rate for Output 1 : 7
+[17:59:18] Rate for Output 2 : 15
+[17:59:18] Rate for Output 3 : 6
+[17:59:18] Routers initiated. Total : 1
+[17:59:18] Network Initiated...
+[17:59:20] Running the network...
+[17:59:38] Router r1 finished
+[17:59:38] Total packets processed : 3000
+[17:59:38] Total packets processed at input 1 : 1000
+[17:59:38] Total packets processed at input 2 : 1000
+[17:59:38] Total packets processed at input 3 : 1000
+[17:59:38] Total packets processed at output 1 : 1248
+[17:59:38] Total packets processed at output 2 : 762
+[17:59:38] Total packets processed at output 3 : 990
+[17:59:38] Mean # of packets in residence at output(r) 1 : 21
+[17:59:38] Mean # of packets in residence at output(r) 2 : 2
+[17:59:38] Mean # of packets in residence at output(r) 3 : 8
+[17:59:38] Max # of packets in residence(R): 65
+[17:59:38] Mean Residence Time at output(Tr) 1 : 11 msecs
+[17:59:38] Mean Residence Time at output(Tr) 2 : 11 msecs
+[17:59:38] Mean Residence Time at output(Tr) 3 : 11 msecs
+[17:59:38] Max Residence Time(Max Tr) : 19 msecs
+[17:59:38] Router r1 finished
