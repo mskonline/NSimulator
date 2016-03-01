@@ -1,8 +1,10 @@
 #include "outputadaptor.h"
 #include <QQueue>
 #include <QFile>
-#include <QDebug>
+#include <iostream>
 #include <ctime>
+
+using namespace std;
 
 OutputAdaptor::OutputAdaptor():oMutex(QMutex::Recursive)
 {
@@ -47,6 +49,7 @@ void OutputAdaptor::run()
 
             outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
             ++processedPackets;
+            cout << "[Output] packets processed" << processedPackets << endl;
         }
 
         msleep(50);
@@ -57,7 +60,7 @@ void OutputAdaptor::terminate()
 {
     outFile->flush();
     outFile->close();  
-    qDebug() << "OAdaptor finished";
+    cout << "OAdaptor finished " << endl;
 
     QThread::terminate();
 }

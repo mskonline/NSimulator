@@ -6,9 +6,11 @@
 #include <QByteArray>
 #include <QQueue>
 #include <ctime>
-
+#include <iostream>
 
 #include <QDebug>
+
+using namespace std;
 
 Router::Router(QString name)
 {
@@ -24,6 +26,8 @@ Router::Router(QString name)
 
 void Router::initiate()
 {
+    puts("Router Initiate");
+
     QString settingsFile = "./config/" + this->name + ".ini";
     QSettings *settings = new QSettings(settingsFile,QSettings::IniFormat);
 
@@ -54,12 +58,11 @@ void Router::initiate()
 
     delete settings;
 
-    allSet = true;
-    interface->log("Router " + name + " initiated");
-
     // Initiate the Input and Output adaptors
     inpAdaptors = new InputAdaptor*[numInputs];
     outAdaptors = new OutputAdaptor*[numOutputs];
+
+    interface->log("Routing table source : " + routingTable);
 
     for(int i = 0; i < numInputs; ++i){
         inpAdaptors[i] = new InputAdaptor(this, input_rates[i], routingTable, this->inputFiles.at(i));
@@ -69,6 +72,9 @@ void Router::initiate()
         outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i]);
         interface->log(QString("Rate for Output %1 : %2").arg(i + 1).arg(output_rates[i]));
     }
+
+    allSet = true;
+    interface->log("Router " + name + " initiated");
 }
 
 void Router::run()
@@ -81,11 +87,14 @@ void Router::run()
     qDebug() << "Num Inputs" << numInputs;
     qDebug() << "Num Outputs" << numOutputs;
 
+    cout << "Starting Input Adaptors..." << endl;
+
     for(int i = 0; i < numOutputs; ++i){
        outAdaptors[i]->start();
        sleep(1);
     }
 
+    cout << "Starting Output Adaptors..." << endl;
 
     for(int i = 0; i < numInputs; ++i){
        inpAdaptors[i]->start();
@@ -96,18 +105,21 @@ void Router::run()
     {
         if(!allPacketsProcessed)
         {
+            //cout << "Packets processed at Input : " << totalInputPackets << endl;
             sleep(1);
             continue;
         }
         break;
     }
 
-    qDebug() << "All packets processed on the input side" << totalInputPackets;
+    cout << "All packets processed on the Input side" << endl;
 
     while(1){
         pProcessed = 0;
         for(int i = 0; i < numOutputs; ++i)
            pProcessed += outAdaptors[i]->processedPackets;
+
+        //cout << "Packets processed at Output : " << pProcessed << endl;
 
         if(pProcessed == totalInputPackets)
         {
@@ -190,6 +202,8 @@ void Router::run()
 
     interface->log("Router " + name + " finished");
     interface->update();
+
+    cout << "All packets processed";
 }
 
 void Router::stop()

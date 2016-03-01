@@ -13,7 +13,7 @@ class Network : public QObject
         Router **routers;
 
         QString routingSrc;
-        Interface *interface;
+        Interface *nsInterface;
 
         bool isRunning;
 
@@ -28,6 +28,7 @@ class Network : public QObject
 
         void run();
         void stop();
+        void rFinished();
 };
 
 #endif // NETWORK_H

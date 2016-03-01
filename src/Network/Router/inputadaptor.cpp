@@ -2,8 +2,10 @@
 #include "router.h"
 #include <QQueue>
 #include <ctime>
-
+#include <iostream>
 #include <QDebug>
+
+using namespace std;
 
 InputAdaptor::InputAdaptor(Router *r, int rate, QString rtSrc)
 {
@@ -25,9 +27,7 @@ void InputAdaptor::loadQueue(QString srcFile)
     QFile f(srcFile);
 
     if(!f.open(QFile::ReadOnly))
-    {
         return;
-    }
 
     QByteArray ba;
 
@@ -72,11 +72,12 @@ void InputAdaptor::run()
             --port;
             r->fabric(p,port,0);
             ++processedPackets;
+            cout << "[Input] packets processed " << processedPackets << endl;
         }
 
         msleep(50);
     }
 
     r->notify(num_input_packets);
-    qDebug() << "IAdaptor finished";
+    cout << "IAdaptor finished" << endl;
 }
