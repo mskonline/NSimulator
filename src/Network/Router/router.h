@@ -15,13 +15,9 @@ class Router: public QThread
     private:
         int numInputs,
             numOutputs,
-            num_input_packets,
-            num_output_packets,
             pProcessed,
             *input_rates,
             *output_rates;
-
-        std::vector<int> meanNumResidentItems,maxNumResidentItems;
 
         QString routingTable;
         QStringList inputFiles;
@@ -38,7 +34,7 @@ class Router: public QThread
         int totalInputPackets;
         int nCount;
 
-        float qLoadFactor;
+        float *qLoadFactor;
         int qSize;
 
     public:

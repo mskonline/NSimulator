@@ -3,14 +3,33 @@
 
 struct Routing
 {
-    unsigned char source_addr[4];
-    unsigned char destination_addr[4];
-    unsigned char destination_mask[4];
-    unsigned char nextRouterHop[4];
-    unsigned char outputPort[1];
-    unsigned char outputPortQ[1];
-    unsigned char dscp[1];
-    unsigned char padding[3];
+    unsigned char source_addr[4]; // 4 Bytes
+    unsigned char destination_addr[4]; // 4 Bytes
+    unsigned char destination_mask[4]; // 4 Bytes
+    unsigned char nextRouterHop[4]; // 4 Bytes
+    unsigned char outputPort[1];// 1 Bytes
+    unsigned char outputPortQ[1];// 1 Bytes
+    unsigned char dscp[1];// 1 Bytes
+    unsigned char padding[3]; // 3 Bytes
+};
+
+/*
+ * sizeof of below structure is 24 instead of 22
+ * due to padding.
+ *
+ * FUTURE Task: Find solution. Routing table lookups
+ * can be done using int instead of char[4]
+ */
+struct Routing2
+{
+    unsigned char source_addr[4]; // 4 Bytes
+    unsigned int destination_addr; // 4 Bytes
+    unsigned int destination_mask; // 4 Bytes
+    unsigned char nextRouterHop[4]; // 4 Bytes
+    unsigned char outputPort[1];// 1 Bytes
+    unsigned char outputPortQ[1];// 1 Bytes
+    unsigned char dscp[1];// 1 Bytes
+    unsigned char padding[3]; // 3 Bytes
 };
 
 struct ipv4 {

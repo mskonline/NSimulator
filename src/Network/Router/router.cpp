@@ -55,7 +55,14 @@ void Router::initiate()
         for(int i = 0; i < outRatesList.size(); ++i){
             output_rates[i] = outRatesList.at(i).toInt();
         }
-        qLoadFactor = settings->value("qloadfactor").toFloat();
+
+        QStringList qLFList = settings->value("qloadfactor").toString().split(":");
+        qLoadFactor = new float[qLFList.size()];
+
+        for(int i = 0; i < qLFList.size(); ++i){
+            qLoadFactor[i] = qLFList.at(i).toFloat();
+        }
+
         qSize = settings->value("qsize").toInt();
         oDelay = settings->value("delay").toInt();
     settings->endGroup();
@@ -67,7 +74,6 @@ void Router::initiate()
     outAdaptors = new OutputAdaptor*[numOutputs];
 
     interface->log("Routing table source : " + routingTable);
-    interface->log(QString("Queue Load factor : %1").arg(qLoadFactor));
     interface->log(QString("Queue Size : %1").arg(qSize));
     interface->log(QString("Input side delay : %1").arg(iDelay));
     interface->log(QString("Output side delay : %1").arg(oDelay));
@@ -77,8 +83,9 @@ void Router::initiate()
         interface->log(QString("Rate for Input %1 : %2").arg(i + 1).arg(input_rates[i]));
     }
     for(int i = 0; i < numOutputs; ++i){
-        outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i], qSize, oDelay, qLoadFactor);
+        outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i], qSize, oDelay, qLoadFactor[i]);
         interface->log(QString("Rate for Output %1 : %2").arg(i + 1).arg(output_rates[i]));
+        interface->log(QString("Load factor at Output %1 : %2").arg(i + 1).arg(qLoadFactor[i]));
     }
 
     allSet = true;
@@ -88,9 +95,15 @@ void Router::initiate()
 void Router::run()
 {
     nCount = totalInputPackets = pProcessed = 0;
-    int total_residence_time = 0 ,maxTime = 0;
-    int totalN, maxN;
-    std::vector<int> meanResidenceTimePLink;
+
+    float total_residence_time = 0.0,
+        maxTime = 0.0;
+    int totalN = 0,
+        maxN = 0;
+
+    std::vector<float> meanResidenceTimePLink,
+                       meanNumResidentItems;
+
 
     cout << "Starting Input Adaptors..." << endl;
 
@@ -136,7 +149,7 @@ void Router::run()
                     totalN += outAdaptors[i]->itemsInQ[j];
 
                  if(totalN == 0)
-                    meanNumResidentItems.push_back(0);
+                    meanNumResidentItems.push_back(0.0);
                  else
                     meanNumResidentItems.push_back(totalN / outAdaptors[i]->itemsInQ.size());
             }
