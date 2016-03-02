@@ -14,12 +14,16 @@ class OutputAdaptor: public QThread
         //QQueue<packet> **outQueues;
 
         int outputRate,
-            processedPackets;
+            processedPackets,
+            delay,
+            qSize,
+            maxQSize,
+            droppedPCount;
 
         QFile *outFile;
         QMutex oMutex;
-        OutputAdaptor();
-        OutputAdaptor(QString,int);
+        OutputAdaptor(int);
+        OutputAdaptor(QString, int, int, int, float);
         ~OutputAdaptor();
 
         std::vector<int> residenceTime, procsTime, itemsInQ;

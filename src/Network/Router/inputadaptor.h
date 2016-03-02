@@ -12,14 +12,15 @@ class InputAdaptor: public QThread
     public:
         int inputRate,
             processedPackets,
-            num_input_packets;
+            num_input_packets,
+            delay;
 
         Router *r;
         QQueue<packet> inpQueue;
         RoutingTable *routingTable;
 
-        InputAdaptor(Router *, int, QString);
-        InputAdaptor(Router *, int, QString, QString);
+        InputAdaptor(Router *, int, int, QString);
+        InputAdaptor(Router *, int, int, QString, QString);
         void loadQueue(QString);
         void run();
 };

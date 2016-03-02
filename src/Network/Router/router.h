@@ -38,8 +38,12 @@ class Router: public QThread
         int totalInputPackets;
         int nCount;
 
+        float qLoadFactor;
+        int qSize;
+
     public:
         QString name;
+        QString logText;
 
         Router(QString);
         ~Router();

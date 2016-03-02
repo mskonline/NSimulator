@@ -3,20 +3,22 @@
 	
 	// Get total count of the packets
 	
+	// Load all packets from buffer in the Input Queues
+	
 	// for all the packets
-		// For port 1 : read 10 packets from buffer 1 and record arrival time in the packet and put into Queue[1] 
+		// For port 1 : read 10 packets from input Queue 1 and record arrival time in the packet and put into Queue[1] 
 			// for each packet in Queue
 				// packet = dequeue
 				// port = classify[packet]
 				// place them in output queue[port]
 		
-		// For port 2 : read 5 packets from buffer 2 and record arrival time in the packet and put into Queue[2]
+		// For port 2 : read 5 packets from input Queue 2 and record arrival time in the packet and put into Queue[2]
 			// for each packet in Queue
 				// packet = dequeue
 				// port = classify[packet]
 				// place them in output queue[port]
 		
-		// For port 3 : read 1 packet from buffer 3 and record arrival time in the packet and put into Queue[3]
+		// For port 3 : read 1 packet input Queue 3 and record arrival time in the packet and put into Queue[3]
 			// for each packet in queue
 				// packet = dequeue
 				// port = classify[packet]

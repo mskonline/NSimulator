@@ -7,17 +7,18 @@
 
 using namespace std;
 
-InputAdaptor::InputAdaptor(Router *r, int rate, QString rtSrc)
+InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc)
 {
     this->r = r;
     this->inputRate = rate;
     routingTable = new RoutingTable(rtSrc);
 }
 
-InputAdaptor::InputAdaptor(Router *r, int rate, QString rtSrc, QString file)
+InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc, QString file)
 {
     this->r = r;
     this->inputRate = rate;
+    this->delay = delay;
     this->loadQueue(file);
     routingTable = new RoutingTable(rtSrc);
 }
@@ -72,10 +73,9 @@ void InputAdaptor::run()
             --port;
             r->fabric(p,port,0);
             ++processedPackets;
-            cout << "[Input] packets processed " << processedPackets << endl;
         }
 
-        msleep(50);
+        msleep(this->delay);
     }
 
     r->notify(num_input_packets);

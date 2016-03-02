@@ -27,7 +27,7 @@ void Network::initiate()
         routers[i]->setInterfaceObj(this->nsInterface);
         routers[i]->setRoutingTable(this->routingSrc);
         routers[i]->initiate();
-        //connect(routers[i],SIGNAL(finished()),this,SLOT(rFinished()));
+        connect(routers[i],SIGNAL(finished()),this,SLOT(rFinished()));
     }
 
     nsInterface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));
@@ -35,7 +35,9 @@ void Network::initiate()
 
 void Network::run()
 {
-    /*FreeConsole();
+    nsInterface->pb_run->hide();
+
+    FreeConsole();
 
     // create a separate new console window
     AllocConsole();
@@ -47,7 +49,7 @@ void Network::run()
     freopen("CON", "w", stdout);
     freopen("CON", "w", stderr);
     freopen("CON", "r", stdin);
-    */
+
     nsInterface->log("Running the network...");
 
     if(!isRunning)
@@ -63,6 +65,9 @@ void Network::run()
 
 void Network::rFinished()
 {
+    for(int i = 0; i < this->numRouters; ++i){
+        nsInterface->log(routers[i]->logText);
+    }
 }
 
 void Network::stop()

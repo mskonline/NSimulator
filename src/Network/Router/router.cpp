@@ -26,10 +26,10 @@ Router::Router(QString name)
 
 void Router::initiate()
 {
-    puts("Router Initiate");
-
     QString settingsFile = "./config/" + this->name + ".ini";
     QSettings *settings = new QSettings(settingsFile,QSettings::IniFormat);
+
+    int iDelay, oDelay;
 
     if(settings->allKeys().count() == 0)
         return;
@@ -44,6 +44,7 @@ void Router::initiate()
             input_rates[i] = ratesList.at(i).toInt();
         }
 
+        iDelay = settings->value("delay").toInt();
     settings->endGroup();
 
     settings->beginGroup("output");
@@ -54,6 +55,9 @@ void Router::initiate()
         for(int i = 0; i < outRatesList.size(); ++i){
             output_rates[i] = outRatesList.at(i).toInt();
         }
+        qLoadFactor = settings->value("qloadfactor").toFloat();
+        qSize = settings->value("qsize").toInt();
+        oDelay = settings->value("delay").toInt();
     settings->endGroup();
 
     delete settings;
@@ -63,13 +67,17 @@ void Router::initiate()
     outAdaptors = new OutputAdaptor*[numOutputs];
 
     interface->log("Routing table source : " + routingTable);
+    interface->log(QString("Queue Load factor : %1").arg(qLoadFactor));
+    interface->log(QString("Queue Size : %1").arg(qSize));
+    interface->log(QString("Input side delay : %1").arg(iDelay));
+    interface->log(QString("Output side delay : %1").arg(oDelay));
 
     for(int i = 0; i < numInputs; ++i){
-        inpAdaptors[i] = new InputAdaptor(this, input_rates[i], routingTable, this->inputFiles.at(i));
+        inpAdaptors[i] = new InputAdaptor(this, input_rates[i], iDelay, routingTable, this->inputFiles.at(i));
         interface->log(QString("Rate for Input %1 : %2").arg(i + 1).arg(input_rates[i]));
     }
     for(int i = 0; i < numOutputs; ++i){
-        outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i]);
+        outAdaptors[i] = new OutputAdaptor(this->outputFiles.at(i), output_rates[i], qSize, oDelay, qLoadFactor);
         interface->log(QString("Rate for Output %1 : %2").arg(i + 1).arg(output_rates[i]));
     }
 
@@ -83,9 +91,6 @@ void Router::run()
     int total_residence_time = 0 ,maxTime = 0;
     int totalN, maxN;
     std::vector<int> meanResidenceTimePLink;
-
-    qDebug() << "Num Inputs" << numInputs;
-    qDebug() << "Num Outputs" << numOutputs;
 
     cout << "Starting Input Adaptors..." << endl;
 
@@ -105,7 +110,7 @@ void Router::run()
     {
         if(!allPacketsProcessed)
         {
-            //cout << "Packets processed at Input : " << totalInputPackets << endl;
+            cout << "Packets processed at Input : " << totalInputPackets << endl;
             sleep(1);
             continue;
         }
@@ -116,10 +121,11 @@ void Router::run()
 
     while(1){
         pProcessed = 0;
-        for(int i = 0; i < numOutputs; ++i)
-           pProcessed += outAdaptors[i]->processedPackets;
 
-        //cout << "Packets processed at Output : " << pProcessed << endl;
+        for(int i = 0; i < numOutputs; ++i)
+           pProcessed += outAdaptors[i]->processedPackets + outAdaptors[i]->droppedPCount;
+
+        cout << "Packets processed at Output : " << pProcessed << endl;
 
         if(pProcessed == totalInputPackets)
         {
@@ -133,8 +139,6 @@ void Router::run()
                     meanNumResidentItems.push_back(0);
                  else
                     meanNumResidentItems.push_back(totalN / outAdaptors[i]->itemsInQ.size());
-
-                 qDebug() << totalN << outAdaptors[i]->itemsInQ.size();
             }
 
             // Max # of Resident Items across all Qs (R)
@@ -153,8 +157,6 @@ void Router::run()
                     total_residence_time += outAdaptors[i]->residenceTime[j];
 
                  meanResidenceTimePLink.push_back(total_residence_time/outAdaptors[i]->residenceTime.size());
-
-                 qDebug() << total_residence_time << outAdaptors[i]->residenceTime.size();
             }
 
             // Max Residence Time from all output Qs
@@ -169,38 +171,43 @@ void Router::run()
                 outAdaptors[i]->terminate();
             break;
         }
-        sleep(.5);
+        sleep(1);
     }
+
 
     interface->update();
 
-    interface->log("Router " + name + " finished");
-    interface->log(QString("Total packets processed : %1").arg(this->pProcessed));
+    logText.append("Router " + name + " finished\n");
+    logText.append(QString("Total packets processed : %1\n").arg(this->pProcessed));
 
     // Logging
     // # packets at Input
     for(int i = 0; i < numInputs; ++i)
-        interface->log(QString("Total packets processed at input %1 : %2").arg(i+1).arg(inpAdaptors[i]->processedPackets));
+        logText.append(QString("Total packets processed at input %1 : %2\n").arg(i+1).arg(inpAdaptors[i]->processedPackets));
 
     // # packets at Output
     for(int i = 0; i < numOutputs; ++i)
-        interface->log(QString("Total packets processed at output %1 : %2").arg(i+1).arg(outAdaptors[i]->processedPackets));
+        logText.append(QString("Total packets processed at output %1 : %2\n").arg(i+1).arg(outAdaptors[i]->processedPackets));
+
+    // # Packets dropped
+    for(int i = 0; i < numOutputs; ++i)
+        logText.append(QString("Total packets dropped at output %1 : %2\n").arg(i+1).arg(outAdaptors[i]->droppedPCount));
 
     // r
     for(int i = 0; i < numOutputs; ++i)
-        interface->log(QString("Mean # of packets in residence at output(r) %1 : %2").arg(i+1).arg(meanNumResidentItems[i]));
+        logText.append(QString("Mean # of packets in residence at output(r) %1 : %2\n").arg(i+1).arg(meanNumResidentItems[i]));
 
     // R
-    interface->log(QString("Max # of packets in residence(R): %2").arg(maxN));
+    logText.append(QString("Max # of packets in residence(R): %1\n").arg(maxN));
 
     // Tr
     for(int i = 0; i < numOutputs; ++i)
-        interface->log(QString("Mean Residence Time at output(Tr) %1 : %2 msecs").arg(i + 1).arg(meanResidenceTimePLink[i]));
+        logText.append(QString("Mean Residence Time at output(Tr) %1 : %2 msecs\n").arg(i + 1).arg(meanResidenceTimePLink[i]));
 
     // Max Tr
-    interface->log(QString("Max Residence Time(Max Tr) : %1 msecs").arg(maxTime));
+    logText.append(QString("Max Residence Time(Max Tr) : %1 msecs\n").arg(maxTime));
 
-    interface->log("Router " + name + " finished");
+    logText.append("Router " + name + " finished\n");
     interface->update();
 
     cout << "All packets processed";

@@ -3,17 +3,25 @@
 #include <QFile>
 #include <iostream>
 #include <ctime>
+#include <math.h>
+#include <QDebug>
 
 using namespace std;
 
-OutputAdaptor::OutputAdaptor():oMutex(QMutex::Recursive)
+OutputAdaptor::OutputAdaptor(int delay):oMutex(QMutex::Recursive)
 {
+    droppedPCount = 0;
 }
 
-OutputAdaptor::OutputAdaptor(QString file,int rate)
+OutputAdaptor::OutputAdaptor(QString file, int rate, int qSize, int delay, float loadFactor)
 {
+    droppedPCount = 0;
     outputRate = rate;
+    this->delay = delay;
     outFile = new QFile(file);
+
+    this->qSize = qSize;
+    this->maxQSize = ceil(loadFactor * qSize);
 
     if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
     }
@@ -34,6 +42,9 @@ void OutputAdaptor::run()
 
         itemsInQ.push_back(outQueue.size());
 
+        // Dummy Service
+        msleep(this->delay);
+
         for(int i=0; i < outputRate; ++i)
         {
             if(outQueue.isEmpty())
@@ -49,10 +60,7 @@ void OutputAdaptor::run()
 
             outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
             ++processedPackets;
-            cout << "[Output] packets processed" << processedPackets << endl;
         }
-
-        msleep(50);
     }
 }
 
@@ -68,6 +76,14 @@ void OutputAdaptor::terminate()
 void OutputAdaptor::putPacket(packet p)
 {
    QMutexLocker m(&oMutex);
+
+   if(outQueue.count() >= this->maxQSize)
+   {
+      // Dropping the packets
+      ++droppedPCount;
+      return;
+   }
+
    outQueue.enqueue(p);
 }
 

@@ -26,3 +26,75 @@
 [17:59:38] Mean Residence Time at output(Tr) 3 : 11 msecs
 [17:59:38] Max Residence Time(Max Tr) : 19 msecs
 [17:59:38] Router r1 finished
+
+// Loadfactor 0.93
+[19:07:46] Welcome to NSimulator...
+[19:07:46] Routing table source : ./config/forwardingtable1
+[19:07:46] Queue Load factor : 0.93
+[19:07:46] Queue Size : 15
+[19:07:46] Rate for Input 1 : 15
+[19:07:46] Rate for Input 2 : 10
+[19:07:46] Rate for Input 3 : 5
+[19:07:46] Rate for Output 1 : 5
+[19:07:46] Rate for Output 2 : 10
+[19:07:46] Rate for Output 3 : 15
+[19:07:46] Router r1 initiated
+[19:07:46] Routers initiated. Total : 1
+[19:07:46] Network Initiated...
+[19:07:48] Running the network...
+[19:08:07] Router r1 finished
+[19:08:07] Total packets processed : 3000
+[19:08:07] Total packets processed at input 1 : 1000
+[19:08:07] Total packets processed at input 2 : 1000
+[19:08:07] Total packets processed at input 3 : 1000
+[19:08:07] Total packets processed at output 1 : 825
+[19:08:07] Total packets processed at output 2 : 762
+[19:08:07] Total packets processed at output 3 : 990
+[19:08:07] Total packets dropped at output 1 : 423
+[19:08:07] Total packets dropped at output 2 : 0
+[19:08:07] Total packets dropped at output 3 : 0
+[19:08:07] Mean # of packets in residence at output(r) 1 : 8
+[19:08:07] Mean # of packets in residence at output(r) 2 : 3
+[19:08:07] Mean # of packets in residence at output(r) 3 : 3
+[19:08:07] Max # of packets in residence(R): 14
+[19:08:07] Mean Residence Time at output(Tr) 1 : 10 msecs
+[19:08:07] Mean Residence Time at output(Tr) 2 : 10 msecs
+[19:08:07] Mean Residence Time at output(Tr) 3 : 10 msecs
+[19:08:07] Max Residence Time(Max Tr) : 20 msecs
+[19:08:07] Router r1 finished
+
+// Loadfactor 1
+[19:11:19] Welcome to NSimulator...
+[19:11:19] Routing table source : ./config/forwardingtable1
+[19:11:19] Queue Load factor : 1
+[19:11:19] Queue Size : 15
+[19:11:19] Rate for Input 1 : 5
+[19:11:19] Rate for Input 2 : 8
+[19:11:19] Rate for Input 3 : 5
+[19:11:19] Rate for Output 1 : 7
+[19:11:19] Rate for Output 2 : 15
+[19:11:19] Rate for Output 3 : 6
+[19:11:19] Router r1 initiated
+[19:11:19] Routers initiated. Total : 1
+[19:11:19] Network Initiated...
+[19:11:23] Running the network...
+[19:11:42] Router r1 finished
+[19:11:42] Total packets processed : 3000
+[19:11:42] Total packets processed at input 1 : 1000
+[19:11:42] Total packets processed at input 2 : 1000
+[19:11:42] Total packets processed at input 3 : 1000
+[19:11:42] Total packets processed at output 1 : 1200
+[19:11:42] Total packets processed at output 2 : 762
+[19:11:42] Total packets processed at output 3 : 974
+[19:11:42] Total packets dropped at output 1 : 48
+[19:11:42] Total packets dropped at output 2 : 0
+[19:11:42] Total packets dropped at output 3 : 16
+[19:11:42] Mean # of packets in residence at output(r) 1 : 7
+[19:11:42] Mean # of packets in residence at output(r) 2 : 2
+[19:11:42] Mean # of packets in residence at output(r) 3 : 5
+[19:11:42] Max # of packets in residence(R): 15
+[19:11:42] Mean Residence Time at output(Tr) 1 : 13 msecs
+[19:11:42] Mean Residence Time at output(Tr) 2 : 13 msecs
+[19:11:42] Mean Residence Time at output(Tr) 3 : 14 msecs
+[19:11:42] Max Residence Time(Max Tr) : 22 msecs
+[19:11:42] Router r1 finished
