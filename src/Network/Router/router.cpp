@@ -116,7 +116,6 @@ void Router::run()
 
     for(int i = 0; i < numOutputs; ++i){
        outAdaptors[i]->start();
-       //sleep(1);
     }
 
     while(1)
