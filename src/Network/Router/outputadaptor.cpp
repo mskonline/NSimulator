@@ -13,7 +13,7 @@ OutputAdaptor::OutputAdaptor(int delay):oMutex(QMutex::Recursive)
     droppedPCount = 0;
 }
 
-OutputAdaptor::OutputAdaptor(QString file, int rate, int qSize, int delay, float loadFactor)
+OutputAdaptor::OutputAdaptor(QString file, int rate, int qSize, int delay, float loadFactor):oQueue(1000)
 {
     droppedPCount = 0;
     outputRate = rate;
@@ -34,25 +34,18 @@ void OutputAdaptor::run()
 
     while(1)
     {
-        if(outQueue.count() == 0)
+
+        itemsInQ.push_back(oQueue.qSize);
+
+        int i;
+        for(i=0; i < 21; ++i)
         {
-            sleep(.5);
-            continue;
-        }
-
-        itemsInQ.push_back(outQueue.size());
-
-        // Dummy Service
-        msleep(this->delay);
-
-        for(int i=0; i < outputRate; ++i)
-        {
-            if(outQueue.isEmpty())
+            if(oQueue.empty())
                 break;
 
-            QMutexLocker m(&oMutex);
-                packet p = outQueue.dequeue();
-            m.unlock();
+            packet p;
+            if(!oQueue.pop(p))
+                break;
 
             // Residence Time
             calcTime = std::time(0) - p.arrivalTime;
@@ -61,13 +54,15 @@ void OutputAdaptor::run()
             outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
             ++processedPackets;
         }
+
+        msleep(this->delay);
     }
 }
 
 void OutputAdaptor::terminate()
 {
     outFile->flush();
-    outFile->close();  
+    outFile->close();
     cout << "OAdaptor finished " << endl;
 
     QThread::terminate();
@@ -75,19 +70,16 @@ void OutputAdaptor::terminate()
 
 void OutputAdaptor::putPacket(packet p)
 {
-   QMutexLocker m(&oMutex);
-
-   if(outQueue.count() >= this->maxQSize)
+    /*if(outQueue.count() >= this->maxQSize)
    {
       // Dropping the packets
       ++droppedPCount;
       return;
-   }
+   }*/
 
-   outQueue.enqueue(p);
+    oQueue.push(p);
 }
 
 OutputAdaptor::~OutputAdaptor()
 {
 }
-

@@ -75,5 +75,7 @@ struct generic_packet{
 #define PACKET_SIZE 500
 #define ROUTING_ENTRY_SIZE sizeof(Routing)
 
+#define TEST_MODE 1
+#define NORMAL_RUN_MODE 0
 
 #endif // COMMONS_H

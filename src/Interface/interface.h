@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "ui_interface.h"
 
+class Network;
 
 class Interface : public QMainWindow, public Ui::Interface
 {
@@ -13,6 +14,10 @@ class Interface : public QMainWindow, public Ui::Interface
 
         void log(QString msg);
         ~Interface();
+
+    public slots:
+
+        void showPlots(Network *);
 };
 
 #endif // INTERFACE_H

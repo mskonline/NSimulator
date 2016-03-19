@@ -1,7 +1,7 @@
 #ifndef NSIMULATOR_H
 #define NSIMULATOR_H
 
-#include <Interface/interface.h>
+#include "Interface/interface.h"
 #include "Network/network.h"
 
 class NSimulator: public QObject
@@ -14,11 +14,14 @@ class NSimulator: public QObject
 
         NSimulator();
         ~NSimulator();
-        void initiate();
+        void initiate(int);
 
     public slots:
 
         void closeApp();
+        void test();
+
+        void showPlots();
 };
 
 #endif // NSIMULATOR_H

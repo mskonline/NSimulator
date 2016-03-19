@@ -42,7 +42,6 @@ void InputAdaptor::loadQueue(QString srcFile)
     {
         packet p;
         memcpy(&p.packetv4, buffer, PACKET_SIZE);
-        p.arrivalTime = std::time(0);
         inpQueue.enqueue(p);
 
         buffer += PACKET_SIZE;
@@ -68,16 +67,18 @@ void InputAdaptor::run()
                 break;
 
             packet p = inpQueue.dequeue();
-
+            p.arrivalTime = std::time(0);
             port = routingTable->lookUp(p.packetv4.destination_addr);
             --port;
+
             r->fabric(p,port,0);
             ++processedPackets;
+
         }
 
         msleep(this->delay);
     }
 
     r->notify(num_input_packets);
-    cout << "IAdaptor finished" << endl;
+    cout << "IAdaptor finished." << endl;
 }

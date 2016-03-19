@@ -27,9 +27,6 @@ class Router: public QThread
 
         // Threading
         QMutex *mutex;
-        InputAdaptor **inpAdaptors;
-        OutputAdaptor **outAdaptors;
-
         bool allPacketsProcessed;
         int totalInputPackets;
         int nCount;
@@ -38,6 +35,8 @@ class Router: public QThread
         int qSize;
 
     public:
+        InputAdaptor **inpAdaptors;
+        OutputAdaptor **outAdaptors;
         QString name;
         QString logText;
 

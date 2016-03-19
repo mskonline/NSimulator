@@ -95,6 +95,9 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
         }
     }
 
+    longestMatchEntry = destinationAddr[0] != 0 ?
+                        longestMatchEntry : (routingTable->length() - 1);
+
     return routingTable->at(longestMatchEntry).outputPort[0];
 }
 

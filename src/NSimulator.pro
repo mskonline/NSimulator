@@ -1,10 +1,11 @@
 QT += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = NSimulator
 TEMPLATE = app
-
+INCLUDEPATH += C:/Boost/include/boost-1_60 \
+               ./Plotting
 SOURCES += \
     main.cpp \
     Interface/interface.cpp \
@@ -15,7 +16,8 @@ SOURCES += \
     Network/Router/inputadaptor.cpp \
     Network/Router/outputadaptor.cpp \
     Network/link.cpp \
-    Utils/nutils.cpp
+    Utils/nutils.cpp \
+    Interface/widgets/nplotter.cpp
 
 
 win32:UI_DIR = temp/ui
@@ -23,7 +25,8 @@ win32:MOC_DIR = temp/moc
 win32:OBJECTS_DIR = temp/obj
 
 FORMS += \
-    Interface/interface.ui
+    Interface/interface.ui \
+    Interface/widgets/nplotter.ui
 
 HEADERS += \
     Interface/interface.h \
@@ -35,9 +38,22 @@ HEADERS += \
     Network/Router/inputadaptor.h \
     Network/Router/outputadaptor.h \
     Network/link.h \
-    Utils/nutils.h
+    Utils/nutils.h \
+    Interface/widgets/nplotter.h
+
 
 RESOURCES += \
     resources/resources.qrc
 
+DEFINES += QCUSTOMPLOT_USE_LIBRARY
+
+CONFIG(debug, release|debug) {
+  win32:QCPLIB = qcustomplotd1
+  else: QCPLIB = qcustomplotd
+} else {
+  win32:QCPLIB = qcustomplot1
+  else: QCPLIB = qcustomplot
+}
+
+LIBS += -L../src/lib/ -l$$QCPLIB
 

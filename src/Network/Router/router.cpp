@@ -107,16 +107,16 @@ void Router::run()
 
     cout << "Starting Input Adaptors..." << endl;
 
-    for(int i = 0; i < numOutputs; ++i){
-       outAdaptors[i]->start();
-       sleep(1);
+    for(int i = 0; i < numInputs; ++i){
+       inpAdaptors[i]->start();
+
     }
 
     cout << "Starting Output Adaptors..." << endl;
 
-    for(int i = 0; i < numInputs; ++i){
-       inpAdaptors[i]->start();
-       sleep(1);
+    for(int i = 0; i < numOutputs; ++i){
+       outAdaptors[i]->start();
+       //sleep(1);
     }
 
     while(1)
@@ -239,9 +239,9 @@ void Router::stop()
 
 void Router::fabric(packet p,int pNo,int qNo)
 {
-    mutex->lock();
+   // mutex->lock();
         outAdaptors[pNo]->putPacket(p);
-    mutex->unlock();
+    //mutex->unlock();
 }
 
 void Router::notify(int nPackets)

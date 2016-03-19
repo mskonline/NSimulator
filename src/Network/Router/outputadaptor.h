@@ -6,13 +6,15 @@
 #include <QFile>
 #include "Commons/commons.h"
 
+#include <boost/lockfree/queue.hpp>
+
 
 class OutputAdaptor: public QThread
 {
     public:
-        QQueue<packet> outQueue;
         //QQueue<packet> **outQueues;
 
+        boost::lockfree::queue<packet> oQueue;
         int outputRate,
             processedPackets,
             delay,
@@ -26,7 +28,7 @@ class OutputAdaptor: public QThread
         OutputAdaptor(QString, int, int, int, float);
         ~OutputAdaptor();
 
-        std::vector<int> residenceTime, procsTime, itemsInQ;
+        std::vector<double> residenceTime, procsTime, itemsInQ;
 
         void run();
         void terminate();

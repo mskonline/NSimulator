@@ -8,9 +8,9 @@ class Network : public QObject
 {
     Q_OBJECT
     private:
+
         QStringList routersList;
         int numRouters;
-        Router **routers;
 
         QString routingSrc;
         Interface *nsInterface;
@@ -18,6 +18,8 @@ class Network : public QObject
         bool isRunning;
 
     public:
+
+        Router **routers;
         Network();
         ~Network();
 
