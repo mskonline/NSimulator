@@ -1,0 +1,3 @@
+Copy queue.hpp to
+
+	C:\Boost\include\boost-1_60\boost\lockfree
