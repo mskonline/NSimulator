@@ -19,6 +19,7 @@ class RoutingTable
         int rEntrySize;
 
         void loadRoutingTable();
+        int countMaskBits(unsigned char);
 };
 
 #endif // ROUTINGTABLE_H

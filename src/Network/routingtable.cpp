@@ -56,9 +56,9 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
         matchCount = 0;
         Routing r = routingTable->at(i);
 
-        for(int j = 0; j < sizeof(r.destination_mask); ++j){
+        for(int j = 0; j <= sizeof(r.destination_mask) - 1; ++j){
 
-            if(r.destination_mask[j] == 0){
+            if(r.destination_mask[0] == 0){
                 break;
             }
 
@@ -76,8 +76,13 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
             }
             else
             {
+                int cBits = 8;
+
+                if(r.destination_mask[j] < 255)
+                    cBits = countMaskBits(r.destination_mask[j]);
+
                 // Count number of Zero's in the result
-                for(int k = 0; k < 8; ++k)
+                for(int k = 0; k < cBits; ++k)
                 {
                     int kthbit = ((xor_result & (128 >> k)) >> (7 - k));
                     if(kthbit == 0)
@@ -89,7 +94,7 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
             }
         }
 
-        if(matchCount >= longestMatch){
+        if(matchCount > longestMatch){
             longestMatchEntry = i;
             longestMatch = matchCount;
         }
@@ -99,6 +104,19 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
                         longestMatchEntry : (routingTable->length() - 1);
 
     return routingTable->at(longestMatchEntry).outputPort[0];
+}
+
+/*
+ * Counting Bits, Brian Kernighan's way
+ * Credit: http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+ */
+int RoutingTable::countMaskBits(unsigned char mask)
+{
+    unsigned char c;
+    for (c = 0; mask; c++)
+      mask &= mask - 1;
+
+    return c;
 }
 
 int RoutingTable::getRoutingEntriesCount()
