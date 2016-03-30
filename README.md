@@ -3,4 +3,4 @@ A Simple Network Simulator written in C++ using Qt application framework and Boo
 
 Goal :
 
-The goal NSimulator is to simulate traffic flowing through a router, measure various Queing behavior and its performance under various Quality of service parameters.
+The goal of NSimulator is to simulate traffic flowing through a router, measure various Queing behavior and its performance under various Quality of service parameters.
