@@ -44,6 +44,6 @@ Implementation:
 * The System is implemented in C++ using Qt and Boost C++ libraries
 * We have taken Thread approach for various components in the system which include the 3 input adapters, 3 output adapters, 6 output    queue push tasks, 3 output queue pop tasks. Total of 12 threads run in the system
 * The input adapter threads are started first to fill in all the buffers at output adapter. After which, the output adapters and the    underlying queue push and pop threads are started for simulation.
-* We have used the concept of lock free Queues available in Boost C++ library. The lock free Queues enables threads to simultaneously   push and pop data without being blocked by one another. That is, the queue need not be locked when one operation is on going. This    enables us to closely simulate an ideal real time Queue
+* We have used the concept of lock free Queues available in Boost C++ library. The lock free Queues enables threads to asynchronously   perform push and pop data without being blocked by one another. That is, the queue need not be locked when one operation is on        going. This enables us to closely simulate an ideal real time Queue
 
 
