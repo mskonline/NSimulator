@@ -7,4 +7,4 @@ The goal of NSimulator is to simulate traffic flowing through a router, measure 
 
 Architecture:
 
-![Alt text](/mskonline/NSimulator/blob/master/docs/architecture_p2.png?raw=true "Router Architecture")
+![Alt text](../docs/architecture_p2.png?raw=true "Router Architecture")
