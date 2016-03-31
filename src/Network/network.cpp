@@ -9,11 +9,13 @@ Network::Network()
 
 void Network::initiate()
 {
+    int pSize = 0;
     QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
 
     settings->beginGroup("Network");
         this->routersList = settings->value("routers").toString().split(":");
         this->routingSrc = settings->value("routingtable").toString();
+        pSize = settings->value("packetsize").toInt();
     settings->endGroup();
 
     delete settings;
@@ -23,7 +25,7 @@ void Network::initiate()
     routers = new Router*[this->numRouters];
 
     for(int i = 0; i < this->numRouters; ++i){
-        routers[i] = new Router(this->routersList.at(i));
+        routers[i] = new Router(this->routersList.at(i), pSize);
         routers[i]->setInterfaceObj(this->nsInterface);
         routers[i]->setRoutingTable(this->routingSrc);
         routers[i]->initiate();

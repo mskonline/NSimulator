@@ -1,83 +1,115 @@
 #include "outputadaptor.h"
+#include "router.h"
 #include <QQueue>
 #include <QFile>
 #include <iostream>
-#include <ctime>
 #include <math.h>
 #include <QDebug>
 
 using namespace std;
 
-OutputAdaptor::OutputAdaptor(int delay):oMutex(QMutex::Recursive)
+OutputAdaptor::OutputAdaptor(int delay)
 {
     droppedPCount = 0;
 }
 
-OutputAdaptor::OutputAdaptor(QString file, int rate, int qSize, int delay, float loadFactor):oQueue(1000)
+OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> arrivalRate, int outRate,
+                             int numQueues, int pSize)
 {
     droppedPCount = 0;
-    outputRate = rate;
-    this->delay = delay;
-    outFile = new QFile(file);
+    nEnqProcs = 0;
+    bPacketsComplete = false;
+    processedPackets = 0;
+    bprocessedPackets = 0;
+    this->id = id + 1;
 
-    this->qSize = qSize;
-    this->maxQSize = ceil(loadFactor * qSize);
+    this->r = r;
+    this->numQueues = numQueues;
 
-    if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
+    pPerQueue = new int(numQueues);
+
+    pBuffers = new QQueue<packet>*[this->numQueues];
+    queues = new Queue*[this->numQueues];
+    enqProc = new EnQueueProcessor*[this->numQueues];
+
+    for(int i = 0; i < this->numQueues; ++i)
+        pBuffers[i] = new QQueue<packet>();
+
+    for(int i = 0; i < this->numQueues; ++i)
+        queues[i] = new Queue(1000);
+
+    for(int i = 0; i < this->numQueues; ++i) {
+        enqProc[i] = new EnQueueProcessor(this,pBuffers[i], queues[i],arrivalRate[i]);
     }
+
+    if(pSize > 0){
+        this->vPacketSize = false;
+        this->serviceTime = ceil(((pSize * 8.0) / outRate) * 1000); // in milli seconds
+    } else
+        this->vPacketSize = true;
+
+    deqProc = new DeQueueProcessor(file, queues, serviceTime, outRate, pSize, vPacketSize);
 }
 
 void OutputAdaptor::run()
 {
-    processedPackets = 0;
-    int calcTime;
+    for(int i = 0; i < this->numQueues; ++i){
+        qDebug() << this->id << pBuffers[i]->size();
+    }
+
+    return;
+
+    for(int i = 0; i < this->numQueues; ++i){
+        pPerQueue[i] = pBuffers[i]->size();
+        enqProc[i]->start();
+    }
+
+    deqProc->start();
+
+    while(1){
+        if(bPacketsComplete)
+            break;
+        msleep(100);
+    }
+
+    msleep(500);
 
     while(1)
     {
+        processedPackets = deqProc->totalPacketsProccessed;
 
-        itemsInQ.push_back(oQueue.qSize);
+        cout << "Processed packets at Output Adaptor " << this->id << " : " << processedPackets << endl;
 
-        int i;
-        for(i=0; i < 21; ++i)
-        {
-            if(oQueue.empty())
-                break;
-
-            packet p;
-            if(!oQueue.pop(p))
-                break;
-
-            // Residence Time
-            calcTime = std::time(0) - p.arrivalTime;
-            residenceTime.push_back(calcTime);
-
-            outFile->write(reinterpret_cast<char*>(&p.packetv4), PACKET_SIZE);
-            ++processedPackets;
+        if(deqProc->totalPacketsProccessed == bprocessedPackets){
+            deqProc->terminate();
+            break;
         }
-
-        msleep(this->delay);
+        sleep(2);
     }
+
+    r->outNotify();
 }
 
 void OutputAdaptor::terminate()
 {
-    outFile->flush();
-    outFile->close();
-    cout << "OAdaptor finished " << endl;
-
+    cout << "Output Adaptor finished " << endl;
     QThread::terminate();
 }
 
-void OutputAdaptor::putPacket(packet p)
+void OutputAdaptor::putPacket(packet p, int qNum)
 {
-    /*if(outQueue.count() >= this->maxQSize)
-   {
-      // Dropping the packets
-      ++droppedPCount;
-      return;
-   }*/
+   QMutexLocker mlocker(&mutex);
+   pBuffers[qNum]->enqueue(p);
+}
 
-    oQueue.push(p);
+void OutputAdaptor::notify(int bprocessedPackets)
+{
+    ++nEnqProcs;
+
+    this->bprocessedPackets += bprocessedPackets;
+
+    if(nEnqProcs == this->numQueues)
+        bPacketsComplete = true;
 }
 
 OutputAdaptor::~OutputAdaptor()

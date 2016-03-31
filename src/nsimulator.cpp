@@ -40,7 +40,8 @@ void NSimulator::test()
 {
     RoutingTable *rt = new RoutingTable("./config/forwardingtable1");
     unsigned char d[4] = {0,0,0,0};
-    int p = rt->lookUp(d);
+    int p,q;
+    rt->lookUp(d,p,q);
 
     interface->log(QString("Port : %1").arg(p));
     delete rt;

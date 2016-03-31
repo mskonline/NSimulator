@@ -17,7 +17,10 @@ SOURCES += \
     Network/Router/outputadaptor.cpp \
     Network/link.cpp \
     Utils/nutils.cpp \
-    Interface/widgets/nplotter.cpp
+    Interface/widgets/nplotter.cpp \
+    Network/Router/enqueueprocessor.cpp \
+    Network/Router/dequeueprocessor.cpp \
+    Network/Router/Queue/queue.cpp
 
 
 win32:UI_DIR = temp/ui
@@ -39,7 +42,10 @@ HEADERS += \
     Network/Router/outputadaptor.h \
     Network/link.h \
     Utils/nutils.h \
-    Interface/widgets/nplotter.h
+    Interface/widgets/nplotter.h \
+    Network/Router/enqueueprocessor.h \
+    Network/Router/dequeueprocessor.h \
+    Network/Router/Queue/queue.h
 
 
 RESOURCES += \

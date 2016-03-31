@@ -1,6 +1,7 @@
 #include "routingtable.h"
 #include <QFile>
 #include <iostream>
+#include <QDebug>
 
 RoutingTable::RoutingTable(QString routingFile)
 {
@@ -10,7 +11,6 @@ RoutingTable::RoutingTable(QString routingFile)
 
     this->loadRoutingTable();
 }
-
 
 void RoutingTable::loadRoutingTable()
 {
@@ -44,10 +44,10 @@ void RoutingTable::loadRoutingTable()
     }
 }
 
-int RoutingTable::lookUp(unsigned char destinationAddr[])
+void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
 {
     int longestMatchEntry = 0;
-    int matchCount;
+    int matchCount, cBits;
     unsigned char longestMatch = 0;
     unsigned char mask_result, xor_result;
 
@@ -56,17 +56,17 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
         matchCount = 0;
         Routing r = routingTable->at(i);
 
-        for(int j = 0; j <= sizeof(r.destination_mask) - 1; ++j){
+        for(unsigned int j = 0; j <= sizeof(r.destination_mask) - 1; ++j){
 
-            if(r.destination_mask[0] == 0){
+            if(r.destination_mask[j] == 0){
                 break;
             }
 
             // Masking the destination addr in the rTable
-            mask_result = r.destination_addr[j] & r.destination_mask[j];
+            mask_result = destinationAddr[j] & r.destination_mask[j];
 
             // XOR operation
-            xor_result = (mask_result ^ destinationAddr[j]);
+            xor_result = (mask_result ^ r.destination_addr[j]);
 
             if(xor_result == 0)
             {
@@ -76,10 +76,7 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
             }
             else
             {
-                int cBits = 8;
-
-                if(r.destination_mask[j] < 255)
-                    cBits = countMaskBits(r.destination_mask[j]);
+                cBits = countMaskBits(r.destination_mask[j]);
 
                 // Count number of Zero's in the result
                 for(int k = 0; k < cBits; ++k)
@@ -90,6 +87,7 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
                     else
                         break;
                 }
+
                 break;
             }
         }
@@ -100,10 +98,12 @@ int RoutingTable::lookUp(unsigned char destinationAddr[])
         }
     }
 
-    longestMatchEntry = destinationAddr[0] != 0 ?
+    longestMatchEntry = longestMatch != 0 ?
                         longestMatchEntry : (routingTable->length() - 1);
 
-    return routingTable->at(longestMatchEntry).outputPort[0];
+    //qDebug() << longestMatchEntry;
+    port = routingTable->at(longestMatchEntry).outputPort[0] - 1;
+    qNum = routingTable->at(longestMatchEntry).outputPortQ[0] - 1;
 }
 
 /*

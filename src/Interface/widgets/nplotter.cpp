@@ -15,7 +15,7 @@ void NPlotter::plot()
 {
     w_plot->addGraph();
 
-    QVector<double> x = QVector<double>::fromStdVector(network->routers[0]->outAdaptors[0]->itemsInQ);
+    QVector<double> x;//= QVector<double>::fromStdVector(*network->routers[0]->outAdaptors[0]->itemsInQ);
     QVector<double> y;
 
     for(int i = 1; i <= x.size(); ++i){

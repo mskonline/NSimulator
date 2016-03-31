@@ -1,8 +1,8 @@
 #include "inputadaptor.h"
 #include "router.h"
 #include <QQueue>
-#include <ctime>
 #include <iostream>
+#include <QtEndian>
 #include <QDebug>
 
 using namespace std;
@@ -10,15 +10,13 @@ using namespace std;
 InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc)
 {
     this->r = r;
-    this->inputRate = rate;
     routingTable = new RoutingTable(rtSrc);
 }
 
-InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc, QString file)
+InputAdaptor::InputAdaptor(Router *r, QString rtSrc, QString file, int pSize)
 {
     this->r = r;
-    this->inputRate = rate;
-    this->delay = delay;
+    this->pSize = pSize;
     this->loadQueue(file);
     routingTable = new RoutingTable(rtSrc);
 }
@@ -26,6 +24,7 @@ InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc, QStrin
 void InputAdaptor::loadQueue(QString srcFile)
 {
     QFile f(srcFile);
+    num_input_packets = 0;
 
     if(!f.open(QFile::ReadOnly))
         return;
@@ -35,25 +34,53 @@ void InputAdaptor::loadQueue(QString srcFile)
     ba = f.readAll();
     char *buffer = new char[ba.size()];
     buffer = ba.data();
-    num_input_packets = (ba.size()/PACKET_SIZE);
-    int j = 0;
 
-    while(j < ba.size())
+    // M/D/1
+    if(pSize > 0)
     {
-        packet p;
-        memcpy(&p.packetv4, buffer, PACKET_SIZE);
-        inpQueue.enqueue(p);
+        num_input_packets = (ba.size()/pSize);
+        int j = 0;
 
-        buffer += PACKET_SIZE;
-        j += PACKET_SIZE;
+        while(j < ba.size())
+        {
+            packet p;
+            memcpy(&p.packetv4, buffer, pSize);
+            inpQueue.enqueue(p);
+
+            buffer += pSize;
+            j += pSize;
+        }
     }
+    else // M/M/1
+    {
+        int j = 0, packetSize = 0;
+        int bSize = ba.size();
 
-  //  delete buffer;
+        while(j < bSize)
+        {
+            unsigned short int pLength;
+
+            memcpy(&pLength, buffer + PACKET_LENGTH_SEEK, PACKET_LENGTH_SEEK);
+            packetSize = qToBigEndian(pLength);
+
+            packet p;
+            memcpy(&p.packetv4, buffer, packetSize);
+
+            p.packetv4.total_length = packetSize;
+            inpQueue.enqueue(p);
+
+            buffer = buffer + packetSize;
+            j += packetSize;
+
+            ++num_input_packets;
+        }
+    }
+    //  delete buffer;
 }
 
 void InputAdaptor::run()
 {
-    int port;
+    int port, qNum;
     processedPackets = 0;
 
     while(1)
@@ -61,24 +88,14 @@ void InputAdaptor::run()
         if(inpQueue.isEmpty())
             break;
 
-        for(int i=0; i < inputRate; ++i)
-        {
-            if(inpQueue.isEmpty())
-                break;
+        packet p = inpQueue.dequeue();
+        routingTable->lookUp(p.packetv4.destination_addr, port, qNum);
 
-            packet p = inpQueue.dequeue();
-            p.arrivalTime = std::time(0);
-            port = routingTable->lookUp(p.packetv4.destination_addr);
-            --port;
+        r->fabric(p,port,qNum);
+        ++processedPackets;
 
-            r->fabric(p,port,0);
-            ++processedPackets;
-
-        }
-
-        msleep(this->delay);
     }
 
-    r->notify(num_input_packets);
-    cout << "IAdaptor finished." << endl;
+    r->inpNotify(num_input_packets);
+    cout << "Input Adaptor finished." << endl;
 }

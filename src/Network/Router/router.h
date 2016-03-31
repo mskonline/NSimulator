@@ -17,6 +17,7 @@ class Router: public QThread
             numOutputs,
             pProcessed,
             *input_rates,
+            *arrival_rates,
             *output_rates;
 
         QString routingTable;
@@ -27,10 +28,13 @@ class Router: public QThread
 
         // Threading
         QMutex *mutex;
-        bool allPacketsProcessed;
-        int totalInputPackets;
-        int nCount;
+        bool allInpPacketsProcessed,
+            allOutPacketsProcessed;
 
+        int totalInputPackets;
+        int nInpCount, nOutCount;
+        int numQueues;
+        int packetSize;
         float *qLoadFactor;
         int qSize;
 
@@ -40,16 +44,18 @@ class Router: public QThread
         QString name;
         QString logText;
 
-        Router(QString);
+        Router(QString, int);
         ~Router();
 
         void setInterfaceObj(Interface *);
         void setRoutingTable(QString);
         void initiate();
         void fabric(packet,int,int);
-        void notify(int);
+        void inpNotify(int);
+        void outNotify();
         void run();
         void stop();
+        void performAnalysis();
 };
 
 #endif // ROUTER_H

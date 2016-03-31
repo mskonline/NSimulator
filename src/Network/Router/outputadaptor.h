@@ -4,35 +4,46 @@
 #include <QMutex>
 #include <QQueue>
 #include <QFile>
+#include <vector>
 #include "Commons/commons.h"
 
-#include <boost/lockfree/queue.hpp>
+#include "Queue/queue.h"
+#include "enqueueprocessor.h"
+#include "dequeueprocessor.h"
 
+class Router;
 
 class OutputAdaptor: public QThread
 {
     public:
-        //QQueue<packet> **outQueues;
+        QQueue<packet> **pBuffers;
+        Queue **queues;
+        EnQueueProcessor **enqProc;
+        DeQueueProcessor *deqProc;
 
-        boost::lockfree::queue<packet> oQueue;
         int outputRate,
+            bprocessedPackets,
             processedPackets,
-            delay,
-            qSize,
-            maxQSize,
-            droppedPCount;
+            droppedPCount,
+            numQueues,
+            nEnqProcs,
+            id,
+            serviceTime;
 
+        int *pPerQueue;
+        Router *r;
+        bool bPacketsComplete, vPacketSize;
         QFile *outFile;
-        QMutex oMutex;
-        OutputAdaptor(int);
-        OutputAdaptor(QString, int, int, int, float);
-        ~OutputAdaptor();
+        QMutex mutex;
 
-        std::vector<double> residenceTime, procsTime, itemsInQ;
+        OutputAdaptor(int);
+        OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int);
+        ~OutputAdaptor();
 
         void run();
         void terminate();
-        void putPacket(packet);
+        void notify(int);
+        void putPacket(packet, int);
 };
 
 #endif // OUTPUTADAPTOR_H

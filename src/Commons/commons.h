@@ -32,6 +32,7 @@ struct Routing2
     unsigned char padding[3]; // 3 Bytes
 };
 
+// 2500 Bytes
 struct ipv4 {
     unsigned char version:4, ihl:4; // 1 Byte
     unsigned char qos; // 1 Byte
@@ -45,7 +46,7 @@ struct ipv4 {
     unsigned char destination_addr[4]; // 4 Bytes
     unsigned int opt_addr[5]; // 20 bytes
     unsigned int tcp_header[5]; // 20 bytes
-    unsigned int data[110]; // 440 bytes
+    unsigned int data[610];
 };
 
 struct ipv6 {
@@ -72,8 +73,9 @@ struct generic_packet{
 };
 
 #define NETWORK_SETTINGS "./config/network.ini"
-#define PACKET_SIZE 500
 #define ROUTING_ENTRY_SIZE sizeof(Routing)
+#define IPV4_HEADER_SIZE 60
+#define PACKET_LENGTH_SEEK 2
 
 #define TEST_MODE 1
 #define NORMAL_RUN_MODE 0
