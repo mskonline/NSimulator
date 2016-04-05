@@ -47,13 +47,13 @@ void RoutingTable::loadRoutingTable()
 void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
 {
     int longestMatchEntry = 0;
-    int matchCount, cBits;
+    int matchCount, cBits, tBits;
     unsigned char longestMatch = 0;
     unsigned char mask_result, xor_result;
 
     for(int i = 0; i < routingTable->size(); ++i)
     {
-        matchCount = 0;
+        matchCount = tBits = 0;
         Routing r = routingTable->at(i);
 
         for(unsigned int j = 0; j <= sizeof(r.destination_mask) - 1; ++j){
@@ -70,13 +70,17 @@ void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
 
             if(xor_result == 0)
             {
-                // 8 bits are matched
+                tBits += 8;
                 matchCount += 8;
-                continue;
             }
             else
             {
-                cBits = countMaskBits(r.destination_mask[j]);
+                cBits = 8;
+
+                if(r.destination_mask[j] < 255)
+                    cBits = countMaskBits(r.destination_mask[j]);
+
+                tBits += cBits;
 
                 // Count number of Zero's in the result
                 for(int k = 0; k < cBits; ++k)
@@ -87,7 +91,11 @@ void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
                     else
                         break;
                 }
+            }
 
+            if(tBits != matchCount)
+            {
+                matchCount = 0;
                 break;
             }
         }
@@ -98,12 +106,11 @@ void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
         }
     }
 
-    longestMatchEntry = longestMatch != 0 ?
-                        longestMatchEntry : (routingTable->length() - 1);
+    if(longestMatch == 0)
+        longestMatchEntry = (routingTable->size() - 1);
 
-    //qDebug() << longestMatchEntry;
-    port = routingTable->at(longestMatchEntry).outputPort[0] - 1;
-    qNum = routingTable->at(longestMatchEntry).outputPortQ[0] - 1;
+    port = routingTable->at(longestMatchEntry).outputPort - 1;
+    qNum = routingTable->at(longestMatchEntry).outputPortQ - 1;
 }
 
 /*

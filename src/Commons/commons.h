@@ -7,8 +7,8 @@ struct Routing
     unsigned char destination_addr[4]; // 4 Bytes
     unsigned char destination_mask[4]; // 4 Bytes
     unsigned char nextRouterHop[4]; // 4 Bytes
-    unsigned char outputPort[1];// 1 Bytes
-    unsigned char outputPortQ[1];// 1 Bytes
+    unsigned char outputPort;// 1 Bytes
+    unsigned char outputPortQ;// 1 Bytes
     unsigned char dscp[1];// 1 Bytes
     unsigned char padding[3]; // 3 Bytes
 };

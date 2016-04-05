@@ -2,7 +2,7 @@
 #define QUEUE_H
 
 #include "Commons/commons.h"
-#include <boost/lockfree/queue.hpp>
+#include "include/queue.hpp"
 #include <vector>
 
 class Queue

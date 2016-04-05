@@ -54,12 +54,6 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
 void OutputAdaptor::run()
 {
     for(int i = 0; i < this->numQueues; ++i){
-        qDebug() << this->id << pBuffers[i]->size();
-    }
-
-    return;
-
-    for(int i = 0; i < this->numQueues; ++i){
         pPerQueue[i] = pBuffers[i]->size();
         enqProc[i]->start();
     }

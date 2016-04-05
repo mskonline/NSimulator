@@ -142,7 +142,6 @@ void Router::run()
     for(int i = 0; i < numOutputs; ++i)
        outAdaptors[i]->start();
 
-    return;
     while(1){
         pProcessed = 0;
 
