@@ -45,7 +45,6 @@ void Router::initiate()
         this->numOutputs = settings->value("values").toString().split(":").count();
         numQueues = settings->value("numQueues").toInt();
         scalefactor = settings->value("scalefactor").toInt();
-
         QStringList arrivalRateList = settings->value("arrivalrate").toString().split(":");
         arrival_rates = new int[arrivalRateList.size()];
         for(int i = 0; i < arrivalRateList.size(); ++i){
@@ -54,8 +53,13 @@ void Router::initiate()
 
         QStringList outRatesList = settings->value("outputrate").toString().split(":");
         output_rates = new int[outRatesList.size()];
+        QStringList WeightList = settings->value("w").toString().split(":");
+        qWeights = new int[WeightList.size()];
         for(int i = 0; i < outRatesList.size(); ++i){
             output_rates[i] = outRatesList.at(i).toInt() * scalefactor;
+        }
+        for(int i = 0; i < WeightList.size(); ++i){
+            qWeights[i] = WeightList.at(i).toInt();
         }
     settings->endGroup();
 
@@ -101,9 +105,10 @@ void Router::initiate()
             arrivalRates.push_back(arrival_rates[j + t]);
 
         outAdaptors[i] = new OutputAdaptor(this,i,this->outputFiles.at(i), arrivalRates,
-                                           output_rates[i], numQueues, packetSize);
+                                           output_rates[i], numQueues, packetSize, qWeights);
 
         interface->log(QString("Output rate for Output %1 : %2 bits/sec").arg(i + 1).arg(output_rates[i]));
+
     }
 
 
@@ -111,6 +116,9 @@ void Router::initiate()
         for(int i = 0; i < numOutputs; ++i)
             interface->log(QString("Calculated service time (Ts) at Output %1 : %2 msecs").arg(i + 1).arg(outAdaptors[i]->serviceTime));
     }
+
+    for(int i = 0; i < numOutputs; ++i)
+        interface->log(QString("Weights used for Weighted Round Robin for Output %1 : %2").arg(i + 1).arg(qWeights[i]));
 
     allSet = true;
     interface->log("Router " + name + " initiated");
@@ -271,7 +279,7 @@ void Router::performAnalysis()
     {
         logText.append(QString(" For output link : %1\n").arg(i + 1));
 
-        t = i * 2;
+        t = i * this->numQueues;
 
         for(int j = 0; j < numQueues; ++j)
             logText.append(QString("  Queue %1 : %2\n").arg(j + 1).arg(meanNumResidentItemsPerQueue[t + j]));
@@ -284,7 +292,7 @@ void Router::performAnalysis()
     {
         logText.append(QString(" For output link : %1\n").arg(i + 1));
 
-        t = i * 2;
+        t = i * this->numQueues;
 
         for(int j = 0; j < numQueues; ++j)
             logText.append(QString("  Queue %1 : %2\n").arg(j + 1).arg(maxNPacketsPerQueue[t + j]));
@@ -297,7 +305,7 @@ void Router::performAnalysis()
     {
         logText.append(QString(" For output link : %1\n").arg(i + 1));
 
-        t = i * 2;
+        t = i * this->numQueues;
 
         for(int j = 0; j < numQueues; ++j)
             logText.append(QString("  Queue %1 : %2 msecs\n").arg(j + 1).arg(meanResidenceTimePerQueue[t + j]));
@@ -311,7 +319,7 @@ void Router::performAnalysis()
     {
         logText.append(QString(" For output link : %1\n").arg(i + 1));
 
-        t = i * 2;
+        t = i * this->numQueues;
 
         for(int j = 0; j < numQueues; ++j)
             logText.append(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 msecs\n").arg(j + 1).arg(maxResTimePerQueue[t + j]));

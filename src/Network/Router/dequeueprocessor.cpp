@@ -12,7 +12,8 @@ DeQueueProcessor::DeQueueProcessor()
 
 DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int outrate,
                                    int pSize,
-                                   bool vPacketSize)
+                                   bool vPacketSize,
+                                   int *qWeights)
 {
     this->queue = q;
     outFile = new QFile(file);
@@ -20,6 +21,7 @@ DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int
     this->pSize = pSize;
     this->vPacketSize = vPacketSize;
     this->outrate = outrate;
+    this->qWeights = qWeights;
 
     if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
     }
@@ -28,12 +30,12 @@ DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int
 void DeQueueProcessor::run()
 {
     totalPacketsProccessed = 0;
-    int calcTime, qNum, temp = 0;
+    int calcTime, qNum, temp = 0, i;
     bool ok;
 
     while(1)
     {
-        qNum = temp % 2;
+        qNum = temp % 3;
 
         queue[qNum]->logQDepth();
 
@@ -44,33 +46,35 @@ void DeQueueProcessor::run()
             continue;
         }
 
-        packet p = queue[qNum]->pop(ok);
-
-        if(!ok)
+        for (i = 0; i < qWeights[qNum]; i++)
         {
-           msleep(this->serviceTime);
-           ++temp;
-           continue;
+            packet p = queue[qNum]->pop(ok);
+
+            if(!ok)
+            {
+                msleep(this->serviceTime);
+                ++temp;
+                continue;
+            }
+
+            // Residence Time
+            calcTime = std::time(0) - p.arrivalTime;
+
+            if(this->vPacketSize)
+            {
+                this->serviceTime = ceil(((p.packetv4.total_length  * 8.0) / outrate) * 1000) ; // in milli seconds
+                this->pSize = p.packetv4.total_length;
+            }
+
+            queue[qNum]->residenceTime.push_back(calcTime + this->serviceTime);
+            outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
+            ++totalPacketsProccessed;
+
+            msleep(this->serviceTime);
+            ++temp;
         }
-
-        // Residence Time
-        calcTime = std::time(0) - p.arrivalTime;
-        queue[qNum]->residenceTime.push_back(calcTime + this->serviceTime);
-
-        if(this->vPacketSize)
-        {
-            this->serviceTime = ceil(((p.packetv4.total_length  * 8.0) / outrate) * 1000) ; // in milli seconds
-            this->pSize = p.packetv4.total_length;
-        }
-
-        outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
-        ++totalPacketsProccessed;
-
-        msleep(this->serviceTime);
-        ++temp;
     }
 }
-
 void DeQueueProcessor::terminate()
 {
     outFile->flush();
