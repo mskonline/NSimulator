@@ -30,19 +30,22 @@ DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int
 void DeQueueProcessor::run()
 {
     totalPacketsProccessed = 0;
-    int calcTime, qNum, temp = 0, i;
+    int calcTime, qNum, temp = -1, i;
+    int totalPacketSize = 0;
     bool ok;
 
     while(1)
     {
+        totalPacketSize = 0;
+
+        ++temp;
         qNum = temp % 3;
 
         queue[qNum]->logQDepth();
 
         if(queue[qNum]->empty())
         {
-            msleep(this->serviceTime);
-            ++temp;
+            msleep(10);
             continue;
         }
 
@@ -52,27 +55,26 @@ void DeQueueProcessor::run()
 
             if(!ok)
             {
-                msleep(this->serviceTime);
-                ++temp;
-                continue;
+                msleep(10);
+                break;
             }
 
             // Residence Time
             calcTime = std::time(0) - p.arrivalTime;
+            totalPacketSize += p.packetv4.total_length;
 
-            if(this->vPacketSize)
-            {
-                this->serviceTime = ceil(((p.packetv4.total_length  * 8.0) / outrate) * 1000) ; // in milli seconds
-                this->pSize = p.packetv4.total_length;
-            }
-
-            queue[qNum]->residenceTime.push_back(calcTime + this->serviceTime);
-            outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
+            outFile->write(reinterpret_cast<char*>(&p.packetv4), p.packetv4.total_length);
             ++totalPacketsProccessed;
-
-            msleep(this->serviceTime);
-            ++temp;
         }
+
+        if(i == 0) continue;
+
+        if(this->vPacketSize)
+            this->serviceTime = ceil(((totalPacketSize * 8.0) / outrate) * 1000) ; // in milli seconds
+
+        msleep(this->serviceTime);
+
+        queue[qNum]->residenceTime.push_back(calcTime + this->serviceTime);
     }
 }
 void DeQueueProcessor::terminate()

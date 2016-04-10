@@ -53,7 +53,7 @@ void Router::initiate()
 
         QStringList outRatesList = settings->value("outputrate").toString().split(":");
         output_rates = new int[outRatesList.size()];
-        QStringList WeightList = settings->value("w").toString().split(":");
+        QStringList WeightList = settings->value("weights").toString().split(":");
         qWeights = new int[WeightList.size()];
         for(int i = 0; i < outRatesList.size(); ++i){
             output_rates[i] = outRatesList.at(i).toInt() * scalefactor;
@@ -118,7 +118,7 @@ void Router::initiate()
     }
 
     for(int i = 0; i < numOutputs; ++i)
-        interface->log(QString("Weights used for Weighted Round Robin for Output %1 : %2").arg(i + 1).arg(qWeights[i]));
+        interface->log(QString("Weights used for weighted round robin for Queue %1 : %2").arg(i + 1).arg(qWeights[i]));
 
     allSet = true;
     interface->log("Router " + name + " initiated");
