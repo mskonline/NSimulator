@@ -34,6 +34,8 @@ void DeQueueProcessor::run()
     int totalPacketSize = 0;
     bool ok;
 
+    QVector<int> pResidenceTime;
+
     while(1)
     {
         totalPacketSize = 0;
@@ -41,13 +43,13 @@ void DeQueueProcessor::run()
         ++temp;
         qNum = temp % 3;
 
-        queue[qNum]->logQDepth();
-
         if(queue[qNum]->empty())
         {
             msleep(10);
             continue;
         }
+
+        queue[qNum]->logQDepth();
 
         for (i = 0; i < qWeights[qNum]; i++)
         {
@@ -61,10 +63,13 @@ void DeQueueProcessor::run()
 
             // Residence Time
             calcTime = std::time(0) - p.arrivalTime;
+            pResidenceTime.push_back(calcTime);
+
             totalPacketSize += p.packetv4.total_length;
 
             outFile->write(reinterpret_cast<char*>(&p.packetv4), p.packetv4.total_length);
             ++totalPacketsProccessed;
+
         }
 
         if(i == 0) continue;
@@ -74,7 +79,11 @@ void DeQueueProcessor::run()
 
         msleep(this->serviceTime);
 
-        queue[qNum]->residenceTime.push_back(calcTime + this->serviceTime);
+        for(int i = 0; i < pResidenceTime.count(); ++i){
+            queue[qNum]->residenceTime.push_back(pResidenceTime.at(i) + this->serviceTime);
+        }
+
+        pResidenceTime.clear();
     }
 }
 void DeQueueProcessor::terminate()

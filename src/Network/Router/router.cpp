@@ -198,8 +198,7 @@ void Router::performAnalysis()
             if(totalN == 0)
                 meanNumResidentItemsPerQueue.push_back(0.0);
             else
-                meanNumResidentItemsPerQueue.push_back(totalN / outAdaptors[i]->queues[j]->itemsInQ.size());
-
+                meanNumResidentItemsPerQueue.push_back((totalN * 1.0) / outAdaptors[i]->queues[j]->itemsInQ.size());
          }
     }
 
@@ -233,7 +232,7 @@ void Router::performAnalysis()
             if(total_residence_time == 0)
                 meanResidenceTimePerQueue.push_back(0.0);
             else
-                meanResidenceTimePerQueue.push_back(total_residence_time / outAdaptors[i]->queues[j]->residenceTime.size());
+                meanResidenceTimePerQueue.push_back((total_residence_time * 1.0) / outAdaptors[i]->queues[j]->residenceTime.size());
         }
     }
 

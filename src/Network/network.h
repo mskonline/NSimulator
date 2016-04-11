@@ -10,7 +10,6 @@ class Network : public QObject
     private:
 
         QStringList routersList;
-        int numRouters;
 
         QString routingSrc;
         Interface *nsInterface;
@@ -18,6 +17,8 @@ class Network : public QObject
         bool isRunning;
 
     public:
+
+        int numRouters;
 
         Router **routers;
         Network();

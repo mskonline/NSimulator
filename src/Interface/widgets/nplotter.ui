@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Queue Analytics</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -75,7 +75,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>100</y>
+          <y>240</y>
           <width>181</width>
           <height>61</height>
          </rect>
@@ -107,15 +107,61 @@
        <widget class="QPushButton" name="pb_plot">
         <property name="geometry">
          <rect>
-          <x>54</x>
-          <y>190</y>
+          <x>60</x>
+          <y>310</y>
           <width>81</width>
-          <height>23</height>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>Plot</string>
         </property>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_3">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>160</y>
+          <width>181</width>
+          <height>61</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Queue</string>
+        </property>
+        <widget class="QComboBox" name="cb_queue">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>161</width>
+           <height>22</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_4">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>90</y>
+          <width>181</width>
+          <height>61</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Output Adaptor</string>
+        </property>
+        <widget class="QComboBox" name="cb_oAdaptor">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>161</width>
+           <height>22</height>
+          </rect>
+         </property>
+        </widget>
        </widget>
       </widget>
      </item>

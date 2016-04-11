@@ -13,9 +13,7 @@ class InputAdaptor;
 class Router: public QThread
 {
     private:
-        int numInputs,
-            numOutputs,
-            pProcessed,
+        int pProcessed,
             *input_rates,
             *arrival_rates,
             *output_rates;
@@ -34,13 +32,15 @@ class Router: public QThread
 
         int totalInputPackets;
         int nInpCount, nOutCount;
-        int numQueues;
         int w;
         int packetSize;
         float *qLoadFactor;
         int qSize;
 
     public:
+
+        int numInputs, numOutputs, numQueues;
+
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
         QString name;
