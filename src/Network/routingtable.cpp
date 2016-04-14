@@ -68,29 +68,21 @@ void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
             // XOR operation
             xor_result = (mask_result ^ r.destination_addr[j]);
 
-            if(xor_result == 0)
+            cBits = 8;
+
+            if(r.destination_mask[j] < 255)
+                cBits = countMaskBits(r.destination_mask[j]);
+
+            tBits += cBits;
+
+            // Count number of Zero's in the result
+            for(int k = 0; k < cBits; ++k)
             {
-                tBits += 8;
-                matchCount += 8;
-            }
-            else
-            {
-                cBits = 8;
-
-                if(r.destination_mask[j] < 255)
-                    cBits = countMaskBits(r.destination_mask[j]);
-
-                tBits += cBits;
-
-                // Count number of Zero's in the result
-                for(int k = 0; k < cBits; ++k)
-                {
-                    int kthbit = ((xor_result & (128 >> k)) >> (7 - k));
-                    if(kthbit == 0)
-                        ++matchCount;
-                    else
-                        break;
-                }
+                int kthbit = ((xor_result & (128 >> k)) >> (7 - k));
+                if(kthbit == 0)
+                    ++matchCount;
+                else
+                    break;
             }
 
             if(tBits != matchCount)

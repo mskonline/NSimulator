@@ -20,7 +20,7 @@ class DeQueueProcessor: public QThread
 
         int *qWeights;
         QFile *outFile;
-        bool vPacketSize;
+        bool vPacketSize, doTerminate;
 
         DeQueueProcessor();
         DeQueueProcessor(QString, Queue **, int, int, int, bool, int *);

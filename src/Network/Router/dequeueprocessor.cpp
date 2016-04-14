@@ -22,6 +22,7 @@ DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int
     this->vPacketSize = vPacketSize;
     this->outrate = outrate;
     this->qWeights = qWeights;
+    this->doTerminate = false;
 
     if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
     }
@@ -38,6 +39,8 @@ void DeQueueProcessor::run()
 
     while(1)
     {
+        if(doTerminate) break;
+
         totalPacketSize = 0;
 
         ++temp;
@@ -56,10 +59,7 @@ void DeQueueProcessor::run()
             packet p = queue[qNum]->pop(ok);
 
             if(!ok)
-            {
-                msleep(10);
                 break;
-            }
 
             // Residence Time
             calcTime = std::time(0) - p.arrivalTime;
@@ -69,7 +69,6 @@ void DeQueueProcessor::run()
 
             outFile->write(reinterpret_cast<char*>(&p.packetv4), p.packetv4.total_length);
             ++totalPacketsProccessed;
-
         }
 
         if(i == 0) continue;
@@ -86,8 +85,10 @@ void DeQueueProcessor::run()
         pResidenceTime.clear();
     }
 }
+
 void DeQueueProcessor::terminate()
 {
+    doTerminate = true;
     outFile->flush();
     outFile->close();
 }
