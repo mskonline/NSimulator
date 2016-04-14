@@ -37,7 +37,7 @@ class OutputAdaptor: public QThread
         QMutex mutex;
 
         OutputAdaptor(int);
-        OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int);
+        OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int, int *);
         ~OutputAdaptor();
 
         void run();

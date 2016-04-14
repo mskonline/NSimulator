@@ -18,11 +18,12 @@ class DeQueueProcessor: public QThread
             pSize,
             totalPacketsProccessed;
 
+        int *qWeights;
         QFile *outFile;
-        bool vPacketSize;
+        bool vPacketSize, doTerminate;
 
         DeQueueProcessor();
-        DeQueueProcessor(QString, Queue **, int, int, int, bool);
+        DeQueueProcessor(QString, Queue **, int, int, int, bool, int *);
         void run();
         void terminate();
 };

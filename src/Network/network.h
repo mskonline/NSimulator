@@ -19,6 +19,7 @@ class Network : public QObject
     public:
 
         int numRouters;
+
         Router **routers;
         Network();
         ~Network();

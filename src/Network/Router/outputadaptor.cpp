@@ -14,7 +14,7 @@ OutputAdaptor::OutputAdaptor(int delay)
 }
 
 OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> arrivalRate, int outRate,
-                             int numQueues, int pSize)
+                             int numQueues, int pSize, int *qWeights)
 {
     droppedPCount = 0;
     nEnqProcs = 0;
@@ -25,7 +25,6 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
 
     this->r = r;
     this->numQueues = numQueues;
-
     pPerQueue = new int(numQueues);
 
     pBuffers = new QQueue<packet>*[this->numQueues];
@@ -48,7 +47,7 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
     } else
         this->vPacketSize = true;
 
-    deqProc = new DeQueueProcessor(file, queues, serviceTime, outRate, pSize, vPacketSize);
+    deqProc = new DeQueueProcessor(file, queues, serviceTime, outRate, pSize, vPacketSize, qWeights);
 }
 
 void OutputAdaptor::run()

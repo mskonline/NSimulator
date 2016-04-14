@@ -17,6 +17,7 @@ class Router: public QThread
             *input_rates,
             *arrival_rates,
             *output_rates;
+            *qWeights;
 
         QString routingTable;
         QStringList inputFiles;
@@ -31,14 +32,15 @@ class Router: public QThread
 
         int totalInputPackets;
         int nInpCount, nOutCount;
+        int w;
         int packetSize;
         float *qLoadFactor;
         int qSize;
 
     public:
-        int numQueues,
-            numInputs,
-            numOutputs;
+
+        int numInputs, numOutputs, numQueues;
+
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
         QString name;
