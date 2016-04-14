@@ -1,11 +1,12 @@
 #include "link.h"
+#include "Router/router.h"
 
-Link::Link()
+Link::Link(Router *r)
 {
-
+    this->destRouter = r;
 }
 
-void Link::put(packet p)
+void Link::transfer(packet p)
 {
 
 }

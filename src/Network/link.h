@@ -3,11 +3,15 @@
 
 #include "Commons/commons.h"
 
+class Router;
+
 class Link
 {
+
     public:
-        Link();
-        void put(packet);
+        Router *destRouter;
+        Link(Router *);
+        void transfer(packet);
 };
 
 #endif // LINK_H

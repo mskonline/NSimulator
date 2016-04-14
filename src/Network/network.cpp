@@ -13,9 +13,13 @@ void Network::initiate()
     QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
 
     settings->beginGroup("Network");
-        this->routersList = settings->value("routers").toString().split(":");
+        this->routersList = settings->value("routers").toString().split(",");
         this->routingSrc = settings->value("routingtable").toString();
         pSize = settings->value("packetsize").toInt();
+    settings->endGroup();
+
+    settings->beginGroup("Links");
+        this->linksList = settings->value("links").toString().split(",");
     settings->endGroup();
 
     delete settings;
@@ -31,6 +35,11 @@ void Network::initiate()
         routers[i]->initiate();
         connect(routers[i],SIGNAL(finished()),this,SLOT(rFinished()));
     }
+
+    // Intiate the links
+
+
+    // Connect the links
 
     nsInterface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));
 }

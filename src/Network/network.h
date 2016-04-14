@@ -7,11 +7,10 @@
 class Network : public QObject
 {
     Q_OBJECT
+
     private:
 
-        QStringList routersList;
-        int numRouters;
-
+        QStringList routersList, linksList;
         QString routingSrc;
         Interface *nsInterface;
 
@@ -19,6 +18,7 @@ class Network : public QObject
 
     public:
 
+        int numRouters;
         Router **routers;
         Network();
         ~Network();
