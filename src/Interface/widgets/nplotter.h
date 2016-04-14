@@ -16,6 +16,7 @@ class NPlotter : public QWidget, public Ui::NPlotter
         Network *network;
 
         NPlotter(QWidget *parent,Network *);
+        void setInputs();
         ~NPlotter();
 
     private:
@@ -25,6 +26,7 @@ class NPlotter : public QWidget, public Ui::NPlotter
     public slots:
 
         void plot();
+        void setOAdaptorsCombo(int);
 };
 
 #endif // NPLOTTER_H
