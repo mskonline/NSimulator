@@ -1,4 +1,5 @@
 #include "dequeueprocessor.h"
+#include "Network/link.h"
 #include <ctime>
 #include <cmath>
 #include <iostream>
@@ -10,22 +11,18 @@ DeQueueProcessor::DeQueueProcessor()
 {
 }
 
-DeQueueProcessor::DeQueueProcessor(QString file, Queue **q, int serviceTime, int outrate,
+DeQueueProcessor::DeQueueProcessor(Queue **q, int serviceTime, int outrate,
                                    int pSize,
                                    bool vPacketSize,
-                                   int *qWeights)
+                                   std::vector<int> qWeights)
 {
     this->queue = q;
-    outFile = new QFile(file);
     this->serviceTime = serviceTime;
     this->pSize = pSize;
     this->vPacketSize = vPacketSize;
     this->outrate = outrate;
     this->qWeights = qWeights;
     this->doTerminate = false;
-
-    if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
-    }
 }
 
 void DeQueueProcessor::run()
@@ -65,9 +62,12 @@ void DeQueueProcessor::run()
             calcTime = std::time(0) - p.arrivalTime;
             pResidenceTime.push_back(calcTime);
 
-            totalPacketSize += p.packetv4.total_length;
+            if(this->vPacketSize)
+                this->pSize = p.packetv4.total_length;
 
-            outFile->write(reinterpret_cast<char*>(&p.packetv4), p.packetv4.total_length);
+            totalPacketSize += this->pSize;
+
+            this->link->transfer(p);
             ++totalPacketsProccessed;
         }
 
@@ -84,11 +84,11 @@ void DeQueueProcessor::run()
 
         pResidenceTime.clear();
     }
+
+    qDebug() << "Dequeuing completed.";
 }
 
 void DeQueueProcessor::terminate()
 {
     doTerminate = true;
-    outFile->flush();
-    outFile->close();
 }

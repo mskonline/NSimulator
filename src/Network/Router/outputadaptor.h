@@ -12,6 +12,7 @@
 #include "dequeueprocessor.h"
 
 class Router;
+class Link;
 
 class OutputAdaptor: public QThread
 {
@@ -24,26 +25,37 @@ class OutputAdaptor: public QThread
         int outputRate,
             bprocessedPackets,
             processedPackets,
+            processedPacketsToDest,
             droppedPCount,
             numQueues,
             nEnqProcs,
             id,
-            serviceTime;
+            pSize,
+            serviceTime,
+            outRate;
 
         int *pPerQueue;
         Router *r;
-        bool bPacketsComplete, vPacketSize;
+        Link *link;
+        bool bPacketsComplete, vPacketSize, doTerminate;
         QFile *outFile;
         QMutex mutex;
 
+        std::vector<int> qWeights;
+
         OutputAdaptor(int);
-        OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int, int *);
+        OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int, std::vector<int>);
         ~OutputAdaptor();
 
         void run();
+        void borderRun();
+        void coreRun();
         void terminate();
         void notify(int);
         void putPacket(packet, int);
+        void setLink(Link *);
+
+        void printLinkInfo();
 };
 
 #endif // OUTPUTADAPTOR_H

@@ -9,9 +9,11 @@
 #include <QMutex>
 
 class InputAdaptor;
+class Link;
 
 class Router: public QThread
 {
+    Q_OBJECT
     private:
         int pProcessed,
             *input_rates,
@@ -19,9 +21,10 @@ class Router: public QThread
             *output_rates;
             *qWeights;
 
+
         QString routingTable;
-        QStringList inputFiles;
-        QStringList outputFiles;
+        QStringList inputs;
+        QStringList outputs;
         Interface *interface;
         bool allSet;
 
@@ -38,29 +41,38 @@ class Router: public QThread
         int qSize;
 
     public:
-
-        int numInputs, numOutputs, numQueues;
+        int id;
+        int numInputs, numOutputs, *numQueues;
+        int processedPackets;
 
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
         QString name;
         QString logText;
 
-        Router(QString, int);
+        bool isBorder;
+
+        Router(int, int);
         ~Router();
 
         void setInterfaceObj(Interface *);
         void setRoutingTable(QString);
+        void setOutputLink(Link *, int);
         void initiate();
         void fabric(packet,int,int);
         void inpNotify(int);
         void outNotify();
         void run();
+        void borderRun();
+        void coreRun();
         void stop();
+        void insertPacket(packet, int);
         void performAnalysis();
 
-        // void insertPacket(packet p, int port)
-        // void connectLink(Link *l, int port);
+        void printOutputLinkInfo();
+
+    signals:
+        void rfinished(int);
 };
 
 #endif // ROUTER_H

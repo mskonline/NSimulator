@@ -2,8 +2,8 @@
 #define INPUTADAPTOR_H
 #include "Commons/commons.h"
 #include "../routingtable.h"
+#include "Queue/queue.h"
 #include <QThread>
-#include <QQueue>
 
 class Router;
 
@@ -16,13 +16,15 @@ class InputAdaptor: public QThread
             pSize;
 
         Router *r;
-        QQueue<packet> inpQueue;
+        Queue *inpQueue;
         RoutingTable *routingTable;
 
-        InputAdaptor(Router *, int, int, QString);
         InputAdaptor(Router *, QString, QString, int);
         void loadQueue(QString);
+        void insertInQueue(packet);
         void run();
+        void borderRun();
+        void coreRun();
 };
 
 #endif // INPUTADAPTOR_H

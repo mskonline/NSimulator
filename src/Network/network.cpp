@@ -1,7 +1,10 @@
 #include "network.h"
+#include <QString>
 #include <QSettings>
-
+#include <QStringList>
 #include <windows.h>
+#include <QDebug>
+
 Network::Network()
 {
     isRunning = false;
@@ -10,38 +13,75 @@ Network::Network()
 void Network::initiate()
 {
     int pSize = 0;
+    isborderRouterFinished = false;
+    rCounter = totalPacketsinNetwork = packetsProcessed = 0;
+
     QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
 
     settings->beginGroup("Network");
-        this->routersList = settings->value("routers").toString().split(",");
+        this->routersList = settings->value("routers").toStringList();
         this->routingSrc = settings->value("routingtable").toString();
         pSize = settings->value("packetsize").toInt();
     settings->endGroup();
-
-    settings->beginGroup("Links");
-        this->linksList = settings->value("links").toString().split(",");
-    settings->endGroup();
-
-    delete settings;
 
     this->numRouters = this->routersList.count();
 
     routers = new Router*[this->numRouters];
 
     for(int i = 0; i < this->numRouters; ++i){
-        routers[i] = new Router(this->routersList.at(i), pSize);
+        routers[i] = new Router(i, pSize);
         routers[i]->setInterfaceObj(this->nsInterface);
-        routers[i]->setRoutingTable(this->routingSrc);
-        routers[i]->initiate();
-        connect(routers[i],SIGNAL(finished()),this,SLOT(rFinished()));
+        connect(routers[i], SIGNAL(rfinished(int)), this, SLOT(rFinished(int)));
     }
 
-    // Intiate the links
+    settings->beginGroup("Links");
+        this->linksList = settings->value("routerlinks").toStringList();
+        this->numLinks = this->linksList.count();
 
+    links = new Link*[this->numLinks];
 
-    // Connect the links
+    // Initiate the links
+    QStringList routerConns;
+    QString dRouterStr, dPortStr;
+    int dRouter, dPort;
+
+    QString sRouterStr, sPortStr;
+    int sRouter, sPort;
+
+    for(int i = 0; i < this->numRouters; ++i)
+        routers[i]->initiate();
+
+    qDebug() << "Routers initiated.";
+
+    for(int i = 0; i < this->numLinks; ++i)
+    {
+        routerConns = settings->value(this->linksList.at(i)).toStringList();
+        sRouterStr = routerConns.at(0).split(":")[0];
+        sPortStr = routerConns.at(0).split(":")[1];
+
+        sRouter = sRouterStr.right(1).toInt();
+        sPort = sPortStr.toInt();
+
+        dRouterStr = routerConns.at(1).split(":")[0];
+        dPortStr = routerConns.at(1).split(":")[1];
+
+        dRouter = dRouterStr.right(1).toInt();
+        dPort = dPortStr.toInt();
+
+        links[i] = new Link(routers[dRouter], dPort);
+
+        this->routers[sRouter]->setOutputLink(links[i], sPort);
+    }
+
+    settings->endGroup();
+
+    delete settings;
+
 
     nsInterface->log(QString("Routers initiated. Total : %1").arg(this->numRouters));
+
+    for(int i = 0; i < numRouters;++i)
+        routers[i]->printOutputLinkInfo();
 }
 
 void Network::run()
@@ -72,12 +112,56 @@ void Network::run()
 
         isRunning = false;
     }
+
+    statusTimer = new QTimer(this);
+    connect(statusTimer,SIGNAL(timeout()),this,SLOT(checkStatus()));
+    statusTimer->start(3000);
 }
 
-void Network::rFinished()
+void Network::checkStatus()
 {
-    for(int i = 0; i < this->numRouters; ++i){
-        nsInterface->log(routers[i]->logText);
+    if(isborderRouterFinished)
+    {
+        packetsProcessed = 0;
+
+        for(int i = 1; i < numRouters; ++i)
+            packetsProcessed += routers[i]->processedPackets;
+
+
+        if(packetsProcessed == totalPacketsinNetwork)
+        {
+            for(int i = 0; i < numRouters; ++i)
+                routers[i]->stop();
+
+            statusTimer->stop();
+        }
+    }
+
+    qDebug() << "Np " << packetsProcessed;
+ }
+
+void Network::rFinished(int id)
+{
+    if(id == 0)
+    {
+        isborderRouterFinished = true;
+        totalPacketsinNetwork = routers[0]->processedPackets;
+        qDebug() << "Border router finished";
+    }
+
+    ++rCounter;
+
+    if(rCounter == this->numRouters)
+    {
+        for(int i = 0; i < this->numRouters; ++i){
+            nsInterface->log(routers[i]->logText);
+        }
+
+        for(int i = 0; i < this->numRouters; ++i)
+            qDebug() << "Packets at destination router " << (i + 1) << routers[i]->processedPackets;
+
+        for(int i = 0; i < this->numLinks; ++i)
+            qDebug() << "Packets transferred at link " << i << " " << this->links[i]->packetsTransferred;
     }
 }
 
@@ -85,6 +169,17 @@ void Network::stop()
 {
     for(int i = 0; i < numRouters; ++i)
         routers[i]->stop();
+
+    statusTimer->stop();
+
+    for(int i = 0; i < this->numRouters; ++i)
+    {
+        for(int j = 0; j < routers[i]->numOutputs; ++j)
+        {
+            for(int k = 0; k < routers[i]->outAdaptors[j]->numQueues; ++k)
+                qDebug() << "Router " << (i + 1) << " queue " << j << k <<  " size " << routers[i]->outAdaptors[j]->queues[k]->size();
+        }
+    }
 }
 
 void Network::setInterfaceObj(Interface *nsInterface)

@@ -1,8 +1,11 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 #include "Router/router.h"
+#include "link.h"
 #include "routingtable.h"
 #include "Interface/interface.h"
+
+#include <QTimer>
 
 class Network : public QObject
 {
@@ -14,13 +17,19 @@ class Network : public QObject
         QString routingSrc;
         Interface *nsInterface;
 
-        bool isRunning;
+        bool isRunning, isborderRouterFinished;
+
+        QTimer *statusTimer;
+
+        int rCounter, totalPacketsinNetwork, packetsProcessed;
 
     public:
 
-        int numRouters;
+        int numRouters, numLinks;
 
         Router **routers;
+        Link **links;
+
         Network();
         ~Network();
 
@@ -31,7 +40,8 @@ class Network : public QObject
 
         void run();
         void stop();
-        void rFinished();
+        void checkStatus();
+        void rFinished(int);
 };
 
 #endif // NETWORK_H

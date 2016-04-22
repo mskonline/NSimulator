@@ -25,8 +25,8 @@ void NPlotter::setInputs()
     for(int j = 0; j < network->routers[0]->numOutputs; ++j)
        cb_oAdaptor->addItem(QString("%1").arg(j + 1));
 
-    for(int k = 0; k < network->routers[0]->numQueues; ++k)
-        cb_queue->addItem(QString("%1").arg(k + 1));
+    //for(int k = 0; k < network->routers[0]->numQueues; ++k)
+        //cb_queue->addItem(QString("%1").arg(k + 1));
 
 }
 

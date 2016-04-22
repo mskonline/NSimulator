@@ -7,11 +7,14 @@ class Router;
 
 class Link
 {
-
     public:
-        Router *destRouter;
-        Link(Router *);
+        Router *destinationRouter;
+        int destinationPort;
+        int packetsTransferred;
+
+        Link(Router *, int);
         void transfer(packet);
+        void printInfo();
 };
 
 #endif // LINK_H

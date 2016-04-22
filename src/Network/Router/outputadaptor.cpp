@@ -1,9 +1,12 @@
 #include "outputadaptor.h"
 #include "router.h"
+#include "Network/link.h"
+
 #include <QQueue>
 #include <QFile>
 #include <iostream>
 #include <math.h>
+#include <ctime>
 #include <QDebug>
 
 using namespace std;
@@ -14,32 +17,29 @@ OutputAdaptor::OutputAdaptor(int delay)
 }
 
 OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> arrivalRate, int outRate,
-                             int numQueues, int pSize, int *qWeights)
+                             int numQueues, int pSize, std::vector<int> qWeights)
 {
     droppedPCount = 0;
     nEnqProcs = 0;
     bPacketsComplete = false;
     processedPackets = 0;
+    processedPacketsToDest = 0;
     bprocessedPackets = 0;
     this->id = id + 1;
-
+    this->outFile = NULL;
+    this->deqProc = NULL;
     this->r = r;
     this->numQueues = numQueues;
+    this->outRate = outRate;
+    this->qWeights = qWeights;
+    this->pSize = pSize;
     pPerQueue = new int(numQueues);
 
-    pBuffers = new QQueue<packet>*[this->numQueues];
+    // TODO
     queues = new Queue*[this->numQueues];
-    enqProc = new EnQueueProcessor*[this->numQueues];
-
-    for(int i = 0; i < this->numQueues; ++i)
-        pBuffers[i] = new QQueue<packet>();
 
     for(int i = 0; i < this->numQueues; ++i)
         queues[i] = new Queue(1000);
-
-    for(int i = 0; i < this->numQueues; ++i) {
-        enqProc[i] = new EnQueueProcessor(this,pBuffers[i], queues[i],arrivalRate[i]);
-    }
 
     if(pSize > 0){
         this->vPacketSize = false;
@@ -47,15 +47,115 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
     } else
         this->vPacketSize = true;
 
-    deqProc = new DeQueueProcessor(file, queues, serviceTime, outRate, pSize, vPacketSize, qWeights);
+    if(this->r->isBorder)
+    {
+        pBuffers = new QQueue<packet>*[this->numQueues];
+        enqProc = new EnQueueProcessor*[this->numQueues];
+
+
+        for(int i = 0; i < this->numQueues; ++i)
+            pBuffers[i] = new QQueue<packet>();
+
+        deqProc = new DeQueueProcessor(queues, serviceTime, outRate, pSize, vPacketSize, qWeights);
+
+        for(int i = 0; i < this->numQueues; ++i) {
+            enqProc[i] = new EnQueueProcessor(this, pBuffers[i], queues[i],arrivalRate[i]);
+        }
+    }
+
+    if(file != "L"){
+        outFile = new QFile(file);
+        if(!outFile->open(QFile::WriteOnly | QFile::Truncate)){
+        }
+    }
+
+    doTerminate = false;
+    this->link = NULL;
 }
 
 void OutputAdaptor::run()
+{
+    if(this->r->isBorder)
+        this->borderRun();
+    else
+        this->coreRun();
+}
+
+void OutputAdaptor::coreRun()
+{
+    //Run for all downstream routers
+    processedPackets = 0;
+    int calcTime, qNum, temp = -1, i;
+    int totalPacketSize = 0;
+    bool ok;
+
+    QVector<int> pResidenceTime;
+
+    while(1)
+    {
+        if(doTerminate) break;
+
+        totalPacketSize = 0;
+
+        ++temp;
+        qNum = temp % this->numQueues;
+
+        if(queues[qNum]->empty())
+        {
+            msleep(10);
+            continue;
+        }
+
+        queues[qNum]->logQDepth();
+
+        for (i = 0; i < qWeights[qNum]; i++)
+        {
+            packet p = queues[qNum]->pop(ok);
+
+            if(!ok)
+                break;
+
+            // Residence Time
+            calcTime = std::time(0) - p.arrivalTime;
+            pResidenceTime.push_back(calcTime);
+
+            if(this->vPacketSize)
+                this->pSize = p.packetv4.total_length;
+
+            totalPacketSize += this->pSize;
+
+            if(this->link)
+                link->transfer(p);
+            else
+            {
+                outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
+                ++processedPacketsToDest;
+            }
+            ++processedPackets;
+        }
+
+        if(i == 0) continue;
+
+        if(this->vPacketSize)
+            this->serviceTime = ceil(((totalPacketSize * 8.0) / outRate) * 1000) ; // in milli seconds
+
+        msleep(this->serviceTime);
+
+        for(int i = 0; i < pResidenceTime.count(); ++i){
+            queues[qNum]->residenceTime.push_back(pResidenceTime.at(i) + this->serviceTime);
+        }
+
+        pResidenceTime.clear();
+    }
+}
+
+void OutputAdaptor::borderRun()
 {
     for(int i = 0; i < this->numQueues; ++i){
         pPerQueue[i] = pBuffers[i]->size();
         enqProc[i]->start();
     }
+
 
     deqProc->start();
 
@@ -86,13 +186,30 @@ void OutputAdaptor::run()
 void OutputAdaptor::terminate()
 {
     cout << "Output Adaptor finished " << endl;
+    doTerminate = true;
+
+    if(!this->link)
+    {
+        outFile->flush();
+        outFile->close();
+    }
+
+    if(this->r->isBorder)
+        deqProc->terminate();
+
     QThread::terminate();
 }
 
 void OutputAdaptor::putPacket(packet p, int qNum)
 {
    QMutexLocker mlocker(&mutex);
-   pBuffers[qNum]->enqueue(p);
+
+   if(r->isBorder){
+       pBuffers[qNum]->enqueue(p);
+   }
+   else {
+       queues[qNum]->push(p);
+   }
 }
 
 void OutputAdaptor::notify(int bprocessedPackets)
@@ -103,6 +220,24 @@ void OutputAdaptor::notify(int bprocessedPackets)
 
     if(nEnqProcs == this->numQueues)
         bPacketsComplete = true;
+}
+
+void OutputAdaptor::setLink(Link *l)
+{
+    this->link = l;
+
+    if(deqProc)
+        deqProc->link = l;
+}
+
+void OutputAdaptor::printLinkInfo()
+{
+    if(this->link)
+        this->link->printInfo();
+    else if(outFile)
+        qDebug() << "Destination file is : " << outFile->fileName();
+    else
+        qDebug() << "Destination undefined";
 }
 
 OutputAdaptor::~OutputAdaptor()

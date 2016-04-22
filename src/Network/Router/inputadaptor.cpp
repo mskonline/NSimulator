@@ -1,24 +1,21 @@
 #include "inputadaptor.h"
 #include "router.h"
-#include <QQueue>
 #include <iostream>
 #include <QtEndian>
 #include <QDebug>
 
 using namespace std;
 
-InputAdaptor::InputAdaptor(Router *r, int rate, int delay, QString rtSrc)
-{
-    this->r = r;
-    routingTable = new RoutingTable(rtSrc);
-}
-
-InputAdaptor::InputAdaptor(Router *r, QString rtSrc, QString file, int pSize)
+InputAdaptor::InputAdaptor(Router *r, QString src, QString rtSrc, int pSize)
 {
     this->r = r;
     this->pSize = pSize;
-    this->loadQueue(file);
     routingTable = new RoutingTable(rtSrc);
+
+    inpQueue = new Queue(1000);
+
+    if(src != "L")
+        this->loadQueue(src);
 }
 
 void InputAdaptor::loadQueue(QString srcFile)
@@ -45,7 +42,7 @@ void InputAdaptor::loadQueue(QString srcFile)
         {
             packet p;
             memcpy(&p.packetv4, buffer, pSize);
-            inpQueue.enqueue(p);
+            inpQueue->push(p);
 
             buffer += pSize;
             j += pSize;
@@ -67,7 +64,7 @@ void InputAdaptor::loadQueue(QString srcFile)
             memcpy(&p.packetv4, buffer, packetSize);
 
             p.packetv4.total_length = packetSize;
-            inpQueue.enqueue(p);
+            inpQueue->push(p);
 
             buffer = buffer + packetSize;
             j += packetSize;
@@ -78,17 +75,65 @@ void InputAdaptor::loadQueue(QString srcFile)
     //  delete buffer;
 }
 
+void InputAdaptor::insertInQueue(packet p)
+{
+    this->inpQueue->push(p);
+}
+
 void InputAdaptor::run()
+{
+    if(this->r->isBorder)
+        this->borderRun();
+    else
+        this->coreRun();
+}
+
+void InputAdaptor::borderRun()
 {
     int port, qNum;
     processedPackets = 0;
+    bool ok;
 
     while(1)
     {
-        if(inpQueue.isEmpty())
+        if(inpQueue->empty())
             break;
 
-        packet p = inpQueue.dequeue();
+        packet p = inpQueue->pop(ok);
+
+        if(!ok)
+            break;
+
+        routingTable->lookUp(p.packetv4.destination_addr, port, qNum);
+
+        r->fabric(p,port,qNum);
+        ++processedPackets;
+
+    }
+
+    r->inpNotify(num_input_packets);
+    cout << "Input Adaptor finished." << endl;
+}
+
+void InputAdaptor::coreRun()
+{
+    int port, qNum;
+    processedPackets = 0;
+    bool ok;
+
+    while(1)
+    {
+        if(inpQueue->empty())
+        {
+            msleep(100);
+            continue;
+        }
+
+        packet p = inpQueue->pop(ok);
+
+        if(!ok)
+            break;
+
         routingTable->lookUp(p.packetv4.destination_addr, port, qNum);
 
         r->fabric(p,port,qNum);

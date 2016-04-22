@@ -16,6 +16,21 @@ class NSimulator: public QObject
         ~NSimulator();
         void initiate(int);
 
+        void generateFTR1();
+        void generateFTR2();
+        void generateFTR3();
+        void generateFTR4();
+        void generateFTR5();
+        void generateFTR6();
+        void generateFTR7();
+
+        void verifyPackets();
+        void writeR2OutContent();
+        void writeR4OutContent();
+        void writeR5OutContent();
+        void writeR6OutContent();
+        void writeR7OutContent();
+
     public slots:
 
         void closeApp();

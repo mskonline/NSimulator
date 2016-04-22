@@ -7,6 +7,7 @@
 
 #include "../../Commons/commons.h"
 
+class Link;
 
 class DeQueueProcessor: public QThread
 {
@@ -18,12 +19,13 @@ class DeQueueProcessor: public QThread
             pSize,
             totalPacketsProccessed;
 
-        int *qWeights;
-        QFile *outFile;
+        Link *link;
         bool vPacketSize, doTerminate;
 
+        std::vector<int> qWeights;
+
         DeQueueProcessor();
-        DeQueueProcessor(QString, Queue **, int, int, int, bool, int *);
+        DeQueueProcessor(Queue **, int, int, int, bool, std::vector<int>);
         void run();
         void terminate();
 };
