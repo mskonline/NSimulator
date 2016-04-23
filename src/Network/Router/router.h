@@ -45,12 +45,20 @@ class Router: public QThread
         int numInputs, numOutputs, *numQueues;
         int processedPackets;
 
+        int startTime;
+        float endTime;
+
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
         QString name;
         QString logText;
 
         bool isBorder;
+
+        std::vector<float> meanResidenceTimePerQueue,
+                           meanNumResidentItemsPerQueue;
+
+        std::vector<int> maxNPacketsPerQueue, maxResTimePerQueue;
 
         Router(int, int);
         ~Router();

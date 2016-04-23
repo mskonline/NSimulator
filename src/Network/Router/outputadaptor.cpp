@@ -35,6 +35,9 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
     this->pSize = pSize;
     pPerQueue = new int(numQueues);
 
+    for(int i = 0; i < numQueues; ++i)
+        pPerQueue[i] = 0;
+
     // TODO
     queues = new Queue*[this->numQueues];
 
@@ -88,6 +91,10 @@ void OutputAdaptor::coreRun()
     int calcTime, qNum, temp = -1, i;
     int totalPacketSize = 0;
     bool ok;
+    int fTime = 0;
+    int fCount = 0;
+    int flow;
+    int flowCount = 1, newFlow = 0;
 
     QVector<int> pResidenceTime;
 
@@ -124,13 +131,41 @@ void OutputAdaptor::coreRun()
 
             totalPacketSize += this->pSize;
 
+            p.flow = (p.flow * 10) + r->id + 1;
+
             if(this->link)
                 link->transfer(p);
             else
             {
                 outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
+
+                /*
+                 * Calculating flow parameters
+                 */
+
+                if(!flowMap.contains(p.flow))
+                {
+                    newFlow = flowCount;
+
+                    flowMap.insert(p.flow, newFlow);
+                    flowTotalTime.insert(newFlow,0);
+                    flowTotalPackets.insert(newFlow,0);
+
+                    ++flowCount;
+                }
+
+                flow = flowMap.value(p.flow);
+
+                fTime = flowTotalTime.value(flow);
+                flowTotalTime.insert(flow, fTime + calcTime);
+
+                fCount = flowTotalPackets.value(flow);
+                flowTotalPackets.insert(flow, fCount + 1);
+
                 ++processedPacketsToDest;
             }
+
+            ++pPerQueue[qNum];
             ++processedPackets;
         }
 

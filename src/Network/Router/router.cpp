@@ -90,6 +90,8 @@ void Router::initiate()
     inpAdaptors = new InputAdaptor*[numInputs];
     outAdaptors = new OutputAdaptor*[numOutputs];
 
+    interface->log("*************************************");
+    interface->log("Router " + name + " configurations");
     interface->log("Forwarding table source : " + routingTable);
 
     if(packetSize > 0){
@@ -135,12 +137,6 @@ void Router::initiate()
         for(int j = 0; j < numQueues[i]; ++j)
             queueWeights.push_back(qWeights[j + t]);
 
-        if(isBorder)
-        {
-        for(int j = 0; j < queueWeights.size(); ++j)
-            qDebug() << queueWeights[j];
-        }
-
         outAdaptors[i] = new OutputAdaptor(this, i, this->outputs.at(i), arrivalRates,
                                            output_rates[i], numQueues[i], packetSize, queueWeights);
 
@@ -163,6 +159,8 @@ void Router::initiate()
 
 void Router::run()
 {
+    startTime = std::time(0);;
+
     if(isBorder)
         this->borderRun();
     else
@@ -209,11 +207,14 @@ void Router::borderRun()
         sleep(1);
     }
 
+    endTime = ((std::time(0) - startTime) * 1.0) / 1000;
+
     logText.append("Router " + name + " finished\n");
     logText.append(QString("Total packets processed : %1\n").arg(this->processedPackets));
 
     cout << "All packets processed" << endl;
-    //this->performAnalysis();
+
+    this->performAnalysis();
 }
 
 void Router::coreRun()
@@ -236,19 +237,10 @@ void Router::coreRun()
 
 void Router::performAnalysis()
 {
-    for(int i = 0; i < numOutputs; ++i)
-        outAdaptors[i]->terminate();
-
     float total_residence_time = 0.0,
         maxTime = 0.0;
     int totalN = 0,
         maxN = 0;
-
-    std::vector<float> meanResidenceTimePerQueue,
-                       meanNumResidentItemsPerQueue;
-
-    std::vector<int> maxNPacketsPerQueue, maxResTimePerQueue;
-
 
     // Mean # of Resident Items per Output Q (r)
     for(int i = 0; i < numOutputs; ++i) {
@@ -316,90 +308,23 @@ void Router::performAnalysis()
             maxResTimePerQueue.push_back(maxTime);
         }
     }
-
-    // Logging
-    // # packets at Input
-    for(int i = 0; i < numInputs; ++i)
-        logText.append(QString("Total packets processed at input %1 : %2\n").arg(i+1).arg(inpAdaptors[i]->processedPackets));
-
-    // # packets at Output
-    for(int i = 0; i < numOutputs; ++i)
-        logText.append(QString("Total packets processed at output %1 : %2\n").arg(i+1).arg(outAdaptors[i]->processedPackets));
-
-    // # Packets per Queue
-    for(int i = 0; i < numOutputs; ++i)
-    {
-        logText.append(QString("For output link : %1\n").arg(i + 1));
-
-        for(int j = 0; j < numQueues[i]; ++j)
-            logText.append(QString(" Total packets processed at Queue %1 : %2\n").arg(j + 1).arg(outAdaptors[i]->pPerQueue[j]));
-    }
-
-    logText.append("Mean # of packets in residence (r)\n");
-
-    int t;
-    // r
-    for(int i = 0; i < numOutputs; ++i)
-    {
-        logText.append(QString(" For output link : %1\n").arg(i + 1));
-
-        t = i * this->numQueues[i];
-
-        for(int j = 0; j < numQueues[i]; ++j)
-            logText.append(QString("  Queue %1 : %2\n").arg(j + 1).arg(meanNumResidentItemsPerQueue[t + j]));
-    }
-
-    logText.append("Max # of packets in residence (R)\n");
-
-    // R
-    for(int i = 0; i < numOutputs; ++i)
-    {
-        logText.append(QString(" For output link : %1\n").arg(i + 1));
-
-        t = i * this->numQueues[i];
-
-        for(int j = 0; j < numQueues[i]; ++j)
-            logText.append(QString("  Queue %1 : %2\n").arg(j + 1).arg(maxNPacketsPerQueue[t + j]));
-    }
-
-    logText.append("Mean Residence Time (Tr)\n");
-
-    // Tr
-    for(int i = 0; i < numOutputs; ++i)
-    {
-        logText.append(QString(" For output link : %1\n").arg(i + 1));
-
-        t = i * this->numQueues[i];
-
-        for(int j = 0; j < numQueues[i]; ++j)
-            logText.append(QString("  Queue %1 : %2 msecs\n").arg(j + 1).arg(meanResidenceTimePerQueue[t + j]));
-
-    }
-
-    logText.append("Max Residence Time (Max Tr)\n");
-
-    // Max Tr
-    for(int i = 0; i < numOutputs; ++i)
-    {
-        logText.append(QString(" For output link : %1\n").arg(i + 1));
-
-        t = i * this->numQueues[i];
-
-        for(int j = 0; j < numQueues[i]; ++j)
-            logText.append(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 msecs\n").arg(j + 1).arg(maxResTimePerQueue[t + j]));
-
-    }
 }
 
 void Router::stop()
 {
+    endTime = ((std::time(0) - startTime) * 1.0) / 1000;
+
+    qDebug() << "Stoping router..." << this->name;
+
     for(int i = 0; i < numOutputs; ++i)
        outAdaptors[i]->terminate();
 
     for(int i = 0; i < numInputs; ++i)
         inpAdaptors[i]->terminate();
 
+    this->performAnalysis();
     this->terminate();
+
 
     emit rfinished(id);
 }

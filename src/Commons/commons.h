@@ -65,6 +65,7 @@ struct packet {
     int version;
     ipv4 packetv4;
     ipv6 packetv6;
+    int flow;
 };
 
 struct generic_packet{
