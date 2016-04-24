@@ -2,8 +2,10 @@
 #include <QString>
 #include <QSettings>
 #include <QStringList>
+#include <ctime>
 #include <windows.h>
 #include <QDebug>
+#include "Router/inputadaptor.h"
 
 Network::Network()
 {
@@ -86,6 +88,8 @@ void Network::initiate()
 
 void Network::run()
 {
+    startTime = std::time(0);
+
     nsInterface->pb_run->hide();
 
     FreeConsole();
@@ -130,14 +134,15 @@ void Network::checkStatus()
 
         if(packetsProcessed == totalPacketsinNetwork)
         {
-            for(int i = 0; i < numRouters; ++i)
-                routers[i]->stop();
-
             statusTimer->stop();
+
+            for(int i = 1; i < numRouters; ++i){
+                routers[i]->stop();
+            }
         }
     }
 
-    qDebug() << "Np " << packetsProcessed;
+    qDebug() << "Total processed " << packetsProcessed;
  }
 
 void Network::rFinished(int id)
@@ -146,23 +151,135 @@ void Network::rFinished(int id)
     {
         isborderRouterFinished = true;
         totalPacketsinNetwork = routers[0]->processedPackets;
-        qDebug() << "Border router finished";
     }
 
     ++rCounter;
 
     if(rCounter == this->numRouters)
     {
-        for(int i = 0; i < this->numRouters; ++i){
-            nsInterface->log(routers[i]->logText);
-        }
-
         for(int i = 0; i < this->numRouters; ++i)
             qDebug() << "Packets at destination router " << (i + 1) << routers[i]->processedPackets;
 
         for(int i = 0; i < this->numLinks; ++i)
             qDebug() << "Packets transferred at link " << i << " " << this->links[i]->packetsTransferred;
+
+        this->performAnalysis();
     }
+}
+
+void Network::performAnalysis()
+{
+    Router *r;
+    QList<int> flows;
+    int flowId;
+
+    for(int i = 0; i < this->numRouters; ++i)
+    {
+        r = routers[i];
+
+        nsInterface->log("********************************");
+        nsInterface->log("Measurements for Router " + r->name);
+
+        // Logging
+        // # packets at Input
+        for(int i = 0; i < r->numInputs; ++i)
+            nsInterface->log(QString("Total packets processed at input %1 : %2").arg(i+1).arg(r->inpAdaptors[i]->processedPackets));
+
+        // # packets at Output
+        for(int i = 0; i < r->numOutputs; ++i)
+            nsInterface->log(QString("Total packets processed at output %1 : %2").arg(i+1).arg(r->outAdaptors[i]->processedPackets));
+
+        // # Packets per Queue
+        for(int i = 0; i < r->numOutputs; ++i)
+        {
+            nsInterface->log(QString("For output link : %1").arg(i + 1));
+
+            for(int j = 0; j < r->numQueues[i]; ++j)
+                nsInterface->log(QString(" Total packets processed at Queue %1 : %2").arg(j + 1).arg(r->outAdaptors[i]->pPerQueue[j]));
+        }
+
+        nsInterface->log("Mean # of packets in residence (r)");
+
+        int t;
+        // r
+        for(int i = 0; i < r->numOutputs; ++i)
+        {
+            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+
+            t = i * r->numQueues[i];
+
+            for(int j = 0; j < r->numQueues[i]; ++j)
+                nsInterface->log(QString("  Queue %1 : %2").arg(j + 1).arg(r->meanNumResidentItemsPerQueue[t + j]));
+        }
+
+        nsInterface->log("Max # of packets in residence (R)");
+
+        // R
+        for(int i = 0; i < r->numOutputs; ++i)
+        {
+            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+
+            t = i * r->numQueues[i];
+
+            for(int j = 0; j < r->numQueues[i]; ++j)
+                nsInterface->log(QString("  Queue %1 : %2").arg(j + 1).arg(r->maxNPacketsPerQueue[t + j]));
+        }
+
+        nsInterface->log("Mean Residence Time (Tr)");
+
+        // Tr
+        for(int i = 0; i < r->numOutputs; ++i)
+        {
+            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+
+            t = i * r->numQueues[i];
+
+            for(int j = 0; j < r->numQueues[i]; ++j)
+                nsInterface->log(QString("  Queue %1 : %2 secs").arg(j + 1).arg(r->meanResidenceTimePerQueue[t + j]));
+
+        }
+
+        nsInterface->log("Max Residence Time (Max Tr)");
+
+        // Max Tr
+        for(int i = 0; i < r->numOutputs; ++i)
+        {
+            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+
+            t = i * r->numQueues[i];
+
+            for(int j = 0; j < r->numQueues[i]; ++j)
+                nsInterface->log(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 secs").arg(j + 1).arg(r->maxResTimePerQueue[t + j]));
+
+        }
+
+
+        for(int j = 0; j < r->numOutputs; ++j)
+        {
+            if(r->outAdaptors[j]->flowMap.count() > 0)
+            {
+
+                flows = r->outAdaptors[j]->flowMap.keys();
+
+                for(int k = 0; k < flows.count(); ++k)
+                {
+                    qDebug() << "Flow " << flows.at(k);
+                    flowId = r->outAdaptors[j]->flowMap.value(flows.at(k));
+
+                    qDebug() << "Total Number of packets : " << r->outAdaptors[j]->flowTotalPackets.value(flowId);
+                    qDebug() << "Avg Time spent in flow : " << ((r->outAdaptors[j]->flowTotalTime.value(flowId) * 1.0)
+                                / r->outAdaptors[j]->flowTotalPackets.value(flowId)) << " secs";
+                }
+            }
+        }
+    }
+
+    float endTime = std::time(0) - startTime;
+
+    //for(int i = 0; i < numRouters; ++i)
+        //nsInterface->log(QString("Total execution time router r%1 : %2 secs").arg(i + 1).arg(routers[i]->endTime));
+
+    nsInterface->log(QString("Simulation complete. Total execution time : %1 secs").arg(endTime));
 }
 
 void Network::stop()

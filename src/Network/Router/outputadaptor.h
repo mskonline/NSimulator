@@ -11,6 +11,9 @@
 #include "enqueueprocessor.h"
 #include "dequeueprocessor.h"
 
+
+#include <QMap>
+
 class Router;
 class Link;
 
@@ -42,6 +45,10 @@ class OutputAdaptor: public QThread
         QMutex mutex;
 
         std::vector<int> qWeights;
+
+        QMap<int, int> flowMap;
+        QMap<int, int> flowTotalTime;
+        QMap<int, int> flowTotalPackets;
 
         OutputAdaptor(int);
         OutputAdaptor(Router *,int, QString, std::vector<int>, int, int, int, std::vector<int>);

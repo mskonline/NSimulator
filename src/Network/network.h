@@ -13,19 +13,25 @@ class Network : public QObject
 
     private:
 
-        QStringList routersList, linksList;
-        QString routingSrc;
         Interface *nsInterface;
-
-        bool isRunning, isborderRouterFinished;
+        QStringList routersList,
+                    linksList;
+        QString routingSrc;
+        bool isRunning,
+             isborderRouterFinished;
 
         QTimer *statusTimer;
 
-        int rCounter, totalPacketsinNetwork, packetsProcessed;
+        int rCounter,
+            totalPacketsinNetwork,
+            packetsProcessed;
+
+        int startTime;
 
     public:
 
-        int numRouters, numLinks;
+        int numRouters,
+            numLinks;
 
         Router **routers;
         Link **links;
@@ -35,6 +41,7 @@ class Network : public QObject
 
         void initiate();
         void setInterfaceObj(Interface *);
+        void performAnalysis();
 
     public slots:
 

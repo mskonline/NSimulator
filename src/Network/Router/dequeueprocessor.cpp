@@ -66,6 +66,7 @@ void DeQueueProcessor::run()
                 this->pSize = p.packetv4.total_length;
 
             totalPacketSize += this->pSize;
+            p.flow = 1;
 
             this->link->transfer(p);
             ++totalPacketsProccessed;
