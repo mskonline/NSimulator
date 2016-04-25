@@ -17,6 +17,7 @@ void Network::initiate()
     int pSize = 0;
     isborderRouterFinished = false;
     rCounter = totalPacketsinNetwork = packetsProcessed = 0;
+    packetsProcessedToDest = 0;
 
     QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
     QString service;
@@ -27,6 +28,8 @@ void Network::initiate()
         service = settings->value("service").toString();
         pSize = settings->value("packetsize").toInt();
     settings->endGroup();
+
+    nsInterface->log("Service : " + service);
 
     this->numRouters = this->routersList.count();
 
@@ -126,14 +129,15 @@ void Network::run()
 
 void Network::checkStatus()
 {
+    packetsProcessedToDest = 0;
+
+    for(int i = 1; i < numRouters; ++i)
+        packetsProcessedToDest += routers[i]->processedPacketsToDest;
+
+    qDebug() << "Total processed " << packetsProcessedToDest;
+
     if(isborderRouterFinished)
     {
-        packetsProcessedToDest = 0;
-
-        for(int i = 1; i < numRouters; ++i)
-            packetsProcessedToDest += routers[i]->processedPacketsToDest;
-
-
         if(packetsProcessedToDest == totalPacketsinNetwork)
         {
             statusTimer->stop();
@@ -143,8 +147,6 @@ void Network::checkStatus()
             }
         }
     }
-
-    qDebug() << "Total processed " << packetsProcessedToDest;
  }
 
 void Network::rFinished(int id)
@@ -204,31 +206,36 @@ void Network::performAnalysis()
 
         nsInterface->mlog("Mean # of packets in residence (r)");
 
-        int t;
+        int t = 0;
         // r
         for(int i = 0; i < r->numOutputs; ++i)
         {
             nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
-            t = i * r->numQueues[i];
-
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->meanNumResidentItemsPerQueue[t + j]));
+            {
+                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->meanNumResidentItemsPerQueue[t]));
+                ++t;
+            }
         }
 
         nsInterface->mlog("Max # of packets in residence (R)");
+
+        t = 0;
 
         // R
         for(int i = 0; i < r->numOutputs; ++i)
         {
             nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
-            t = i * r->numQueues[i];
-
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->maxNPacketsPerQueue[t + j]));
+            {
+                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->maxNPacketsPerQueue[t]));
+                ++t;
+            }
         }
 
+        t = 0;
         nsInterface->mlog("Mean Residence Time (Tr)");
 
         // Tr
@@ -236,13 +243,14 @@ void Network::performAnalysis()
         {
             nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
-            t = i * r->numQueues[i];
-
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->mlog(QString("  Queue %1 : %2 secs").arg(j + 1).arg(r->meanResidenceTimePerQueue[t + j]));
-
+            {
+                nsInterface->mlog(QString("  Queue %1 : %2 secs").arg(j + 1).arg(r->meanResidenceTimePerQueue[t]));
+                ++t;
+            }
         }
 
+        t = 0;
         nsInterface->mlog("Max Residence Time (Max Tr)");
 
         // Max Tr
@@ -250,11 +258,11 @@ void Network::performAnalysis()
         {
             nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
-            t = i * r->numQueues[i];
-
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->mlog(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 secs").arg(j + 1).arg(r->maxResTimePerQueue[t + j]));
-
+            {
+                nsInterface->mlog(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 secs").arg(j + 1).arg(r->maxResTimePerQueue[t]));
+                ++t;
+            }
         }
 
 
@@ -271,6 +279,7 @@ void Network::performAnalysis()
                     flowId = r->outAdaptors[j]->flowMap.value(flows.at(k));
 
                     qDebug() << "Total Number of packets : " << r->outAdaptors[j]->flowTotalPackets.value(flowId);
+                    qDebug() << "Total time : " <<  r->outAdaptors[j]->flowTotalTime.value(flowId);
                     qDebug() << "Avg Time spent in flow : " << ((r->outAdaptors[j]->flowTotalTime.value(flowId) * 1.0)
                                 / r->outAdaptors[j]->flowTotalPackets.value(flowId)) << " secs";
                 }

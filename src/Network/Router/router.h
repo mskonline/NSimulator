@@ -63,7 +63,7 @@ class Router: public QThread
         std::vector<int> maxNPacketsPerQueue, maxResTimePerQueue;
 
 
-        QList<int> diffServCodes;
+        QList<int> **diffServCodes;
 
         Router(int, int);
         ~Router();

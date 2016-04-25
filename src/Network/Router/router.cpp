@@ -41,6 +41,7 @@ void Router::initiate(QString service)
         return;
 
     QString str;
+    QString dsCodes;
 
     settings->beginGroup("config");
         this->numInputs = settings->value("numinputs").toString().toInt();
@@ -87,6 +88,28 @@ void Router::initiate(QString service)
         for(int i = 0; i < WeightList.size(); ++i)
             qWeights[i] = WeightList.at(i).toInt();
 
+        if(service == "DIFFSERV")
+        {
+            serviceType = DIFFSERV;
+            QStringList dlist = settings->value("diffservices").toStringList();
+
+            int q = 0;
+            int d = 0;
+            diffServCodes = new QList<int>*[numOutputs];
+
+            for(int i = 0; i < numOutputs; ++i)
+            {
+                q = numQueues[i];
+                diffServCodes[i] = new QList<int>;
+
+                for(int k = 0; k < q; ++k) {
+                    diffServCodes[i]->append(dlist.at(d).toInt());
+                    dsCodes.append(dlist.at(d) + " ");
+                    ++d;
+                }
+            }
+        }
+
         settings->endGroup();
 
     delete settings;
@@ -115,17 +138,7 @@ void Router::initiate(QString service)
     interface->log("Forwarding table source : " + routingTable);
 
     interface->log(QString("Scale factor : %1").arg(scalefactor));
-
-
-    if(service == "DIFFSERV")
-    {
-        serviceType = DIFFSERV;
-        QStringList dlist = settings->value("diffservices").toString().split(":");
-
-        for(int i = 0; i < dlist.size(); ++i)
-            diffServCodes.append(dlist.at(i).toInt());
-    }
-
+    interface->log("Diff Services offered : " + dsCodes);
 
     for(int i = 0; i < numInputs; ++i)
         inpAdaptors[i] = new InputAdaptor(this, serviceType, this->inputs.at(i), routingTable, packetSize);
@@ -145,20 +158,24 @@ void Router::initiate(QString service)
     }
 
     t = 0;
+    int w = 0;
 
     for(int i = 0; i < numOutputs; ++i){
         vector<int> arrivalRates, queueWeights;
 
-        t = i * numQueues[i];
-
         if(isBorder)
         {
+            t = i * numQueues[i];
+
             for(int j = 0; j < numQueues[i]; ++j)
                 arrivalRates.push_back(arrival_rates[j + t]);
         }
 
         for(int j = 0; j < numQueues[i]; ++j)
-            queueWeights.push_back(qWeights[j + t]);
+        {
+            queueWeights.push_back(qWeights[w]);
+            ++w;
+        }
 
         outAdaptors[i] = new OutputAdaptor(this, i, this->outputs.at(i), arrivalRates,
                                            output_rates[i], numQueues[i], packetSize, queueWeights);
@@ -174,13 +191,15 @@ void Router::initiate(QString service)
     }
 
     t = 0;
+    w = 0;
 
     for(int i = 0; i < numOutputs; ++i){
 
-        t = i * numQueues[i];
-
         for(int j = 0; j < numQueues[i]; ++j)
-            interface->log(QString("Weights used for weighted round robin for Output %1 Queue %2 : %3").arg(i + 1).arg(j + 1).arg(qWeights[j + t]));
+        {
+            interface->log(QString("Weights used for weighted round robin for Output %1 Queue %2 : %3").arg(i + 1).arg(j + 1).arg(qWeights[w]));
+            ++w;
+        }
     }
 
     allSet = true;

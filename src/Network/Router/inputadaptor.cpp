@@ -143,9 +143,9 @@ void InputAdaptor::coreRun()
         routingTable->lookUp(p.packetv4.destination_addr, port, qNum, dscp);
 
         if(r->serviceType == DIFFSERV)
-            qNum = r->diffServCodes.indexOf(p.packetv4.dscp);
+            qNum = r->diffServCodes[port]->indexOf(p.packetv4.dscp);
 
-        r->fabric(p,port,qNum);
+        r->fabric(p, port, qNum);
         ++processedPackets;
     }
 
