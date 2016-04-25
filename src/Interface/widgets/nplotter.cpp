@@ -20,7 +20,7 @@ NPlotter::NPlotter(QWidget *parent, Network *n) :
 void NPlotter::setInputs()
 {
     for(int i = 0; i < network->numRouters; ++i)
-        cb_router->addItem(network->routers[i]->name);
+        cb_router->addItem(network->routers[i]->rname);
 
     for(int j = 0; j < network->routers[0]->numOutputs; ++j)
        cb_oAdaptor->addItem(QString("%1").arg(j + 1));

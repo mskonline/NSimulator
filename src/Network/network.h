@@ -24,7 +24,8 @@ class Network : public QObject
 
         int rCounter,
             totalPacketsinNetwork,
-            packetsProcessed;
+            packetsProcessed,
+            packetsProcessedToDest;
 
         int startTime;
 

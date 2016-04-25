@@ -5,33 +5,67 @@
 #include <QDebug>
 using namespace std;
 
-EnQueueProcessor::EnQueueProcessor(OutputAdaptor *o, QQueue<packet> *bq, Queue *q, int rate)
+EnQueueProcessor::EnQueueProcessor(OutputAdaptor *o, QQueue<packet> *bq, Queue *q, int rate, int arrivalType)
 {
     this->queue = q;
     this->pBuffer = bq;
     this->arrivalRate = rate;
+    this->arrivalType = arrivalType;
     this->o = o;
 
     totalPacketsProccessed = 0;
 }
 
+
 void EnQueueProcessor::run()
 {
-    int i = 0;
-    int numerator=pBuffer->size(),l,denominator=arrivalRate;
-    qDebug() << numerator << denominator;
-    if (numerator < denominator*denominator*2)
+    if(arrivalType == POISSON_ARRIVAL)
+        this->poissonRun();
+    else
+        this->deterministicRun();
+}
+
+void EnQueueProcessor::deterministicRun()
+{
+    while(1)
     {
-        l = 1;
+        if(pBuffer->empty())
+            break;
+
+        for(int i = 0; i < arrivalRate; ++i){
+            if(pBuffer->empty())
+                break;
+
+            packet p = pBuffer->dequeue();
+            p.arrivalTimeInNetwork = p.arrivalTimeAtRouter = std::time(0);
+            this->queue->push(p);
+            ++totalPacketsProccessed;
+        }
+
+        sleep(1);
     }
+
+    cout << "Buffer flushed" << endl;
+    o->notify(totalPacketsProccessed);
+}
+
+void EnQueueProcessor::poissonRun()
+{
+    int i = 0;
+    int numerator = pBuffer->size(), l, denominator = arrivalRate;
+
+    int cValue = denominator * denominator;
+
+    if (numerator < cValue * 2)
+        l = 1;
     else
     {
         while(1)
         {
-            if(denominator*denominator*i < numerator && numerator < denominator*denominator*2*i)
+            if(cValue * i < numerator && numerator < cValue * 2 * i)
             {
                 l = i;
-                numerator=numerator/l;
+                numerator = numerator / l;
                 break;
             }
             ++i;
@@ -39,74 +73,62 @@ void EnQueueProcessor::run()
         }
     }
 
-    int b = numerator/denominator;// b=132 ,nume = 1188 c = 0 deno = 9 l = 8
-    int d = b/denominator;//14.66
-    int e = d%2, f=e%2;
+    int numValues = numerator / denominator;
+    int ratio = numValues / denominator;
+    int e = ratio % 2, f = e % 2;
 
+    vector<int> pArray;
+    vector<int> poissonArrivals;
 
-
-    vector<int> ans;
-    vector<int> blank;
-
+    // Even case
     if(e == 0)
     {
-        ans.push_back(denominator+f);// 8
+        pArray.push_back(denominator + f);
 
-        for(int i = 0; i < b/2 ; ++i)
-        {
-            ans.push_back(i+denominator+1+f); // 6 7 8 9
+        for(int i = 0; i < numValues/2 ; ++i)
+            pArray.push_back(i + denominator + 1 + f);
 
-        }
-
-
-        for(int j = b/2 - 1; j > 0 ; j--)
-        {
-            ans.push_back(denominator-j+f); // 3 4 5s
-
-
-        }
-
+        for(int j = numValues/2 - 1; j > 0 ; j--)
+            pArray.push_back(denominator - j + f);
     }
+    // Odd case
     else
     {
-        ans.push_back(denominator+e); //6
+        pArray.push_back(denominator+e);
 
-        b = b - 1; //8
-        for(int i = 0; i < b/2; i++)
-        {
-            ans.push_back(i+denominator+e+f); // 6 7
-        }
-        for(int j = b/2+1 ; j > 0 ; j--) //
-        {
-            ans.push_back(denominator-j+e); // 4 5
-        }
+        numValues = numValues - 1;
+        for(int i = 0; i < numValues/2; i++)
+            pArray.push_back(i + denominator + e + f);
+        for(int j = numValues/2+1 ; j > 0 ; j--)
+            pArray.push_back(denominator - j + e);
     }
-    for (int k=0; k<l; k++)
-    {
-        blank.insert(blank.end(), ans.begin(), ans.end());
-    }
+
+    // Duplicating the pArray to build the final poissonArrival array
+    for (int k = 0; k < l; k++)
+        poissonArrivals.insert(poissonArrivals.end(), pArray.begin(), pArray.end());
 
     int sum = 0;
-    for(int i = 0; i < blank.size(); ++i)
-        sum += blank[i];
+    for(int i = 0; i < poissonArrivals.size(); ++i)
+        sum += poissonArrivals[i];
 
-    qDebug() << "Actual arrival " << denominator << "Measured " << ((sum) / blank.size());
+    qDebug() << "Actual : " << arrivalRate << "Measured " << (sum / poissonArrivals.size());
 
     while(1)
     {
         if(pBuffer->empty())
             break;
 
-        for(int i = 0; i < blank.back(); ++i){
+        for(int i = 0; i < poissonArrivals.back(); ++i){
             if(pBuffer->empty())
                 break;
 
             packet p = pBuffer->dequeue();
-            p.arrivalTime = std::time(0);
+            p.arrivalTimeInNetwork = p.arrivalTimeAtRouter = std::time(0);
             this->queue->push(p);
             ++totalPacketsProccessed;
         }
-        blank.pop_back();
+
+        poissonArrivals.pop_back();
         sleep(1);
     }
 

@@ -44,7 +44,7 @@ void RoutingTable::loadRoutingTable()
     }
 }
 
-void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
+void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum, unsigned char &dscp)
 {
     int longestMatchEntry = 0;
     int matchCount, cBits, tBits;
@@ -103,6 +103,7 @@ void RoutingTable::lookUp(unsigned char destinationAddr[], int &port, int &qNum)
 
     port = routingTable->at(longestMatchEntry).outputPort - 1;
     qNum = routingTable->at(longestMatchEntry).outputPortQ - 1;
+    dscp = routingTable->at(longestMatchEntry).dscp;
 }
 
 /*
@@ -116,6 +117,16 @@ int RoutingTable::countMaskBits(unsigned char mask)
       mask &= mask - 1;
 
     return c;
+}
+
+void RoutingTable::printRoutingTable()
+{
+    for(int i = 0; i < routingTable->size(); ++i)
+    {
+        Routing r = routingTable->at(i);
+
+        qDebug() << r.destination_addr << r.dscp;
+    }
 }
 
 int RoutingTable::getRoutingEntriesCount()

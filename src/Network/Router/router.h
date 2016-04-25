@@ -43,22 +43,27 @@ class Router: public QThread
     public:
         int id;
         int numInputs, numOutputs, *numQueues;
-        int processedPackets;
+        int processedPackets, processedPacketsToDest;
+        int serviceType;
 
         int startTime;
         float endTime;
 
         InputAdaptor **inpAdaptors;
         OutputAdaptor **outAdaptors;
-        QString name;
+        QString rid, rname;
         QString logText;
 
         bool isBorder;
+        int arrivalRateType;
 
         std::vector<float> meanResidenceTimePerQueue,
                            meanNumResidentItemsPerQueue;
 
         std::vector<int> maxNPacketsPerQueue, maxResTimePerQueue;
+
+
+        QList<int> diffServCodes;
 
         Router(int, int);
         ~Router();
@@ -66,7 +71,7 @@ class Router: public QThread
         void setInterfaceObj(Interface *);
         void setRoutingTable(QString);
         void setOutputLink(Link *, int);
-        void initiate();
+        void initiate(QString);
         void fabric(packet,int,int);
         void inpNotify(int);
         void outNotify();

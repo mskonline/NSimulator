@@ -9,7 +9,7 @@ struct Routing
     unsigned char nextRouterHop[4]; // 4 Bytes
     unsigned char outputPort;// 1 Bytes
     unsigned char outputPortQ;// 1 Bytes
-    unsigned char dscp[1];// 1 Bytes
+    unsigned char ecn:2, dscp:6;// 1 Bytes
     unsigned char padding[3]; // 3 Bytes
 };
 
@@ -35,7 +35,7 @@ struct Routing2
 // 2500 Bytes
 struct ipv4 {
     unsigned char version:4, ihl:4; // 1 Byte
-    unsigned char qos; // 1 Byte
+    unsigned char dscp:6, ecn:2; // 1 Byte
     unsigned short int total_length; // 2 Bytes
     unsigned short int identification; // 2 Bytes
     unsigned short int flags:3, frag_offset:13; // 2 Bytes
@@ -61,7 +61,8 @@ struct ipv6 {
 };
 
 struct packet {
-    int arrivalTime;
+    int arrivalTimeAtRouter;
+    int arrivalTimeInNetwork;
     int version;
     ipv4 packetv4;
     ipv6 packetv6;
@@ -77,6 +78,13 @@ struct generic_packet{
 #define ROUTING_ENTRY_SIZE sizeof(Routing)
 #define IPV4_HEADER_SIZE 60
 #define PACKET_LENGTH_SEEK 2
+
+#define GENERAL_SERVICE 0
+#define INTSERV 1
+#define DIFFSERV 2
+
+#define POISSON_ARRIVAL 0
+#define DETERMINISTIC_ARRIVAL 1
 
 #define TEST_MODE 1
 #define NORMAL_RUN_MODE 0

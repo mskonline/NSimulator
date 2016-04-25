@@ -1,15 +1,17 @@
 #include "inputadaptor.h"
 #include "router.h"
 #include <iostream>
+#include <ctime>
 #include <QtEndian>
 #include <QDebug>
 
 using namespace std;
 
-InputAdaptor::InputAdaptor(Router *r, QString src, QString rtSrc, int pSize)
+InputAdaptor::InputAdaptor(Router *r, int serviceType, QString src, QString rtSrc, int pSize)
 {
     this->r = r;
     this->pSize = pSize;
+    this->serviceType = serviceType;
     routingTable = new RoutingTable(rtSrc);
 
     inpQueue = new Queue(1000);
@@ -32,7 +34,7 @@ void InputAdaptor::loadQueue(QString srcFile)
     char *buffer = new char[ba.size()];
     buffer = ba.data();
 
-    // M/D/1
+    // */D/1
     if(pSize > 0)
     {
         num_input_packets = (ba.size()/pSize);
@@ -48,7 +50,7 @@ void InputAdaptor::loadQueue(QString srcFile)
             j += pSize;
         }
     }
-    else // M/M/1
+    else // */M/1
     {
         int j = 0, packetSize = 0;
         int bSize = ba.size();
@@ -77,6 +79,7 @@ void InputAdaptor::loadQueue(QString srcFile)
 
 void InputAdaptor::insertInQueue(packet p)
 {
+    p.arrivalTimeAtRouter = std::time(0);
     this->inpQueue->push(p);
 }
 
@@ -91,6 +94,7 @@ void InputAdaptor::run()
 void InputAdaptor::borderRun()
 {
     int port, qNum;
+    unsigned char dscp;
     processedPackets = 0;
     bool ok;
 
@@ -104,7 +108,8 @@ void InputAdaptor::borderRun()
         if(!ok)
             break;
 
-        routingTable->lookUp(p.packetv4.destination_addr, port, qNum);
+        routingTable->lookUp(p.packetv4.destination_addr, port, qNum, dscp);
+        p.packetv4.dscp = dscp;
 
         r->fabric(p,port,qNum);
         ++processedPackets;
@@ -118,6 +123,7 @@ void InputAdaptor::borderRun()
 void InputAdaptor::coreRun()
 {
     int port, qNum;
+    unsigned char dscp;
     processedPackets = 0;
     bool ok;
 
@@ -134,11 +140,13 @@ void InputAdaptor::coreRun()
         if(!ok)
             break;
 
-        routingTable->lookUp(p.packetv4.destination_addr, port, qNum);
+        routingTable->lookUp(p.packetv4.destination_addr, port, qNum, dscp);
+
+        if(r->serviceType == DIFFSERV)
+            qNum = r->diffServCodes.indexOf(p.packetv4.dscp);
 
         r->fabric(p,port,qNum);
         ++processedPackets;
-
     }
 
     r->inpNotify(num_input_packets);

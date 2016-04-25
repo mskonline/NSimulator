@@ -59,7 +59,7 @@ void DeQueueProcessor::run()
                 break;
 
             // Residence Time
-            calcTime = std::time(0) - p.arrivalTime;
+            calcTime = std::time(0) - p.arrivalTimeAtRouter;
             pResidenceTime.push_back(calcTime);
 
             if(this->vPacketSize)

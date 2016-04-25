@@ -13,6 +13,7 @@ class Interface : public QMainWindow, public Ui::Interface
         Interface(QWidget *parent = 0);
 
         void log(QString msg);
+        void mlog(QString msg);
         ~Interface();
 
     public slots:

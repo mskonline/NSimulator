@@ -16,11 +16,14 @@ class EnQueueProcessor: public QThread
         QQueue<packet> *pBuffer;
         Queue *queue;
         int arrivalRate,
+            arrivalType,
             totalPacketsProccessed;
 
         OutputAdaptor *o;
-        EnQueueProcessor(OutputAdaptor *o, QQueue<packet> *, Queue *, int);
+        EnQueueProcessor(OutputAdaptor *o, QQueue<packet> *, Queue *, int, int);
         void run();
+        void poissonRun();
+        void deterministicRun();
 };
 
 #endif // ENQUEUEPROCESSOR_H

@@ -15,21 +15,24 @@ using namespace std;
 Router::Router(int id, int pSize)
 {
     this->id = id;
-    this->name = QString("r%1").arg(id);
+    this->rid = QString("r%1").arg(id);
+    this->rname = QString("r%1").arg(id + 1);
     this->allSet = false;
     processedPackets = 0;
+    processedPacketsToDest = 0;
     totalInputPackets = 0;
     nInpCount = 0;
     nOutCount = 0;
     packetSize = pSize;
     isBorder = false;
+    serviceType = GENERAL_SERVICE;
 
     allInpPacketsProcessed = allOutPacketsProcessed = false;
 }
 
-void Router::initiate()
+void Router::initiate(QString service)
 {
-    QString settingsFile = "./config/" + this->name + ".ini";
+    QString settingsFile = "./config/" + service + "/" + this->rid + ".ini";
     QSettings *settings = new QSettings(settingsFile,QSettings::IniFormat);
 
     int scalefactor;
@@ -67,9 +70,11 @@ void Router::initiate()
         {
             QStringList arrivalRateList = settings->value("arrivalrate").toString().split(":");
             arrival_rates = new int[arrivalRateList.size()];
-            for(int i = 0; i < arrivalRateList.size(); ++i){
+            for(int i = 0; i < arrivalRateList.size(); ++i)
                 arrival_rates[i] = arrivalRateList.at(i).toInt() * scalefactor;
-            }
+
+            QString arrivalType = settings->value("packetarrival").toString();
+            arrivalRateType = arrivalType == "D" ? DETERMINISTIC_ARRIVAL : POISSON_ARRIVAL;
         }
 
         QStringList outRatesList = settings->value("outputrate").toString().split(":");
@@ -90,22 +95,40 @@ void Router::initiate()
     inpAdaptors = new InputAdaptor*[numInputs];
     outAdaptors = new OutputAdaptor*[numOutputs];
 
-    interface->log("*************************************");
-    interface->log("Router " + name + " configurations");
-    interface->log("Forwarding table source : " + routingTable);
-
-    if(packetSize > 0){
-        interface->log(QString("Packet size in the network : %1 bytes").arg(packetSize));
-        interface->log("Router performance : M/D/1");
-    } else {
-        interface->log("Packet size in the network : Variable");
-        interface->log("Router performance : M/M/1");
+    if(isBorder)
+    {
+        if(packetSize > 0){
+            if(arrivalRateType == DETERMINISTIC_ARRIVAL)
+                interface->log("Network performance : D/D/1");
+            else
+                interface->log("Network performance : M/D/1");
+        } else {
+            if(arrivalRateType == DETERMINISTIC_ARRIVAL)
+                interface->log("Network performance : D/M/1");
+            else
+                interface->log("Network performance : M/M/1");
+        }
     }
+
+    interface->log("*************************************");
+    interface->log("Router " + rname + " configurations");
+    interface->log("Forwarding table source : " + routingTable);
 
     interface->log(QString("Scale factor : %1").arg(scalefactor));
 
+
+    if(service == "DIFFSERV")
+    {
+        serviceType = DIFFSERV;
+        QStringList dlist = settings->value("diffservices").toString().split(":");
+
+        for(int i = 0; i < dlist.size(); ++i)
+            diffServCodes.append(dlist.at(i).toInt());
+    }
+
+
     for(int i = 0; i < numInputs; ++i)
-        inpAdaptors[i] = new InputAdaptor(this, this->inputs.at(i), routingTable, packetSize);
+        inpAdaptors[i] = new InputAdaptor(this, serviceType, this->inputs.at(i), routingTable, packetSize);
 
 
     int t = 0;
@@ -150,11 +173,18 @@ void Router::initiate()
             interface->log(QString("Calculated service time (Ts) at Output %1 : %2 msecs").arg(i + 1).arg(outAdaptors[i]->serviceTime));
     }
 
-    for(int i = 0; i < numOutputs; ++i)
-        interface->log(QString("Weights used for weighted round robin for Queue %1 : %2").arg(i + 1).arg(qWeights[i]));
+    t = 0;
+
+    for(int i = 0; i < numOutputs; ++i){
+
+        t = i * numQueues[i];
+
+        for(int j = 0; j < numQueues[i]; ++j)
+            interface->log(QString("Weights used for weighted round robin for Output %1 Queue %2 : %3").arg(i + 1).arg(j + 1).arg(qWeights[j + t]));
+    }
 
     allSet = true;
-    interface->log("Router " + name + " initiated");
+    interface->log("Router " + rname + " initiated");
 }
 
 void Router::run()
@@ -209,7 +239,7 @@ void Router::borderRun()
 
     endTime = ((std::time(0) - startTime) * 1.0) / 1000;
 
-    logText.append("Router " + name + " finished\n");
+    logText.append("Router " + rname + " finished\n");
     logText.append(QString("Total packets processed : %1\n").arg(this->processedPackets));
 
     cout << "All packets processed" << endl;
@@ -226,10 +256,10 @@ void Router::coreRun()
        outAdaptors[i]->start();
 
     while(1){
-        processedPackets = 0;
+        processedPacketsToDest = 0;
 
         for(int i = 0; i < numOutputs; ++i)
-           processedPackets += outAdaptors[i]->processedPacketsToDest;
+           processedPacketsToDest += outAdaptors[i]->processedPacketsToDest;
 
         sleep(1);
     }
@@ -308,13 +338,18 @@ void Router::performAnalysis()
             maxResTimePerQueue.push_back(maxTime);
         }
     }
+
+    processedPackets = 0;
+
+    for(int i = 0; i < numOutputs; ++i)
+        processedPackets += outAdaptors[i]->processedPackets;
 }
 
 void Router::stop()
 {
     endTime = ((std::time(0) - startTime) * 1.0) / 1000;
 
-    qDebug() << "Stoping router..." << this->name;
+    qDebug() << "Stoping router..." << this->rname;
 
     for(int i = 0; i < numOutputs; ++i)
        outAdaptors[i]->terminate();
@@ -373,7 +408,7 @@ void Router::setRoutingTable(QString rSrc){
 
 void Router::printOutputLinkInfo()
 {
-    qDebug() << "Router - " << name;
+    qDebug() << "Router - " << rname;
 
     for(int i = 0; i < numOutputs; ++i)
         outAdaptors[i]->printLinkInfo();

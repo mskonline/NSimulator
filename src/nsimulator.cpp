@@ -40,21 +40,23 @@ void NSimulator::showPlots()
 
 void NSimulator::test()
 {
-    /*RoutingTable *rt = new RoutingTable("./config/p4/Ph4ForwardingTable");
-    unsigned char d[4] = {0,0,0,0};
+    RoutingTable *rt = new RoutingTable("./config/p4/Ph4ForwardingTable");
+    /*unsigned char d[4] = {0,0,0,0};
     int p,q;
     rt->lookUp(d,p,q);
 
     interface->log(QString("Port : %1").arg(p));
-    delete rt;
+    delete rt;*/
 
-    generateFTR2();
+    rt->printRoutingTable();
+
+    /*generateFTR2();
     generateFTR3();
     generateFTR4();
     generateFTR5();
     generateFTR6();
     generateFTR7();*/
-    verifyPackets();
+    //verifyPackets();
 }
 
 void NSimulator::verifyPackets()
@@ -266,7 +268,7 @@ void NSimulator::writeR7OutContent()
     qDebug() << "Done writing r7 contents";
 }
 
-void NSimulator::generateFTR1()
+/*void NSimulator::generateFTR1()
 {
     // TODO
     // For Router R1
@@ -511,7 +513,7 @@ void NSimulator::generateFTR7()
        f.close();
     }
 }
-
+*/
 void NSimulator::closeApp()
 {
     // TODO :tear down network

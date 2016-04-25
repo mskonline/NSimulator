@@ -62,7 +62,7 @@ OutputAdaptor::OutputAdaptor(Router *r, int id, QString file, std::vector<int> a
         deqProc = new DeQueueProcessor(queues, serviceTime, outRate, pSize, vPacketSize, qWeights);
 
         for(int i = 0; i < this->numQueues; ++i) {
-            enqProc[i] = new EnQueueProcessor(this, pBuffers[i], queues[i],arrivalRate[i]);
+            enqProc[i] = new EnQueueProcessor(this, pBuffers[i], queues[i], arrivalRate[i], r->arrivalRateType);
         }
     }
 
@@ -91,10 +91,13 @@ void OutputAdaptor::coreRun()
     int calcTime, qNum, temp = -1, i;
     int totalPacketSize = 0;
     bool ok;
-    int fTime = 0;
-    int fCount = 0;
-    int flow;
-    int flowCount = 1, newFlow = 0;
+
+    int fTime = 0,
+        fCount = 0,
+        flow,
+        flowCount = 1,
+        newFlow = 0,
+        flowTime;
 
     QVector<int> pResidenceTime;
 
@@ -123,7 +126,7 @@ void OutputAdaptor::coreRun()
                 break;
 
             // Residence Time
-            calcTime = std::time(0) - p.arrivalTime;
+            calcTime = std::time(0) - p.arrivalTimeAtRouter;
             pResidenceTime.push_back(calcTime);
 
             if(this->vPacketSize)
@@ -137,6 +140,7 @@ void OutputAdaptor::coreRun()
                 link->transfer(p);
             else
             {
+                flowTime = std::time(0) - p.arrivalTimeInNetwork;
                 outFile->write(reinterpret_cast<char*>(&p.packetv4), this->pSize);
 
                 /*
@@ -157,7 +161,7 @@ void OutputAdaptor::coreRun()
                 flow = flowMap.value(p.flow);
 
                 fTime = flowTotalTime.value(flow);
-                flowTotalTime.insert(flow, fTime + calcTime);
+                flowTotalTime.insert(flow, fTime + flowTime);
 
                 fCount = flowTotalPackets.value(flow);
                 flowTotalPackets.insert(flow, fCount + 1);

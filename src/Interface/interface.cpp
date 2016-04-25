@@ -13,6 +13,11 @@ void Interface::log(QString msg)
                             .toString("hh:mm:ss") + "] " + msg);
 }
 
+void Interface::mlog(QString msg)
+{
+    this->LogViewer->append(msg);
+}
+
 void Interface::showPlots(Network *network)
 {
     NPlotter *np = new NPlotter(this,network);

@@ -19,10 +19,12 @@ void Network::initiate()
     rCounter = totalPacketsinNetwork = packetsProcessed = 0;
 
     QSettings *settings = new QSettings(NETWORK_SETTINGS,QSettings::IniFormat);
+    QString service;
 
     settings->beginGroup("Network");
         this->routersList = settings->value("routers").toStringList();
         this->routingSrc = settings->value("routingtable").toString();
+        service = settings->value("service").toString();
         pSize = settings->value("packetsize").toInt();
     settings->endGroup();
 
@@ -51,7 +53,7 @@ void Network::initiate()
     int sRouter, sPort;
 
     for(int i = 0; i < this->numRouters; ++i)
-        routers[i]->initiate();
+        routers[i]->initiate(service);
 
     qDebug() << "Routers initiated.";
 
@@ -126,13 +128,13 @@ void Network::checkStatus()
 {
     if(isborderRouterFinished)
     {
-        packetsProcessed = 0;
+        packetsProcessedToDest = 0;
 
         for(int i = 1; i < numRouters; ++i)
-            packetsProcessed += routers[i]->processedPackets;
+            packetsProcessedToDest += routers[i]->processedPacketsToDest;
 
 
-        if(packetsProcessed == totalPacketsinNetwork)
+        if(packetsProcessedToDest == totalPacketsinNetwork)
         {
             statusTimer->stop();
 
@@ -142,7 +144,7 @@ void Network::checkStatus()
         }
     }
 
-    qDebug() << "Total processed " << packetsProcessed;
+    qDebug() << "Total processed " << packetsProcessedToDest;
  }
 
 void Network::rFinished(int id)
@@ -158,7 +160,7 @@ void Network::rFinished(int id)
     if(rCounter == this->numRouters)
     {
         for(int i = 0; i < this->numRouters; ++i)
-            qDebug() << "Packets at destination router " << (i + 1) << routers[i]->processedPackets;
+            qDebug() << "Packets at destination router " << (i + 1) << routers[i]->processedPacketsToDest;
 
         for(int i = 0; i < this->numLinks; ++i)
             qDebug() << "Packets transferred at link " << i << " " << this->links[i]->packetsTransferred;
@@ -177,79 +179,81 @@ void Network::performAnalysis()
     {
         r = routers[i];
 
-        nsInterface->log("********************************");
-        nsInterface->log("Measurements for Router " + r->name);
+        nsInterface->mlog("********************************");
+        nsInterface->mlog("Measurements for Router " + r->rname);
+
+        nsInterface->mlog(QString("Total packets processed : %1").arg(r->processedPackets));
 
         // Logging
         // # packets at Input
         for(int i = 0; i < r->numInputs; ++i)
-            nsInterface->log(QString("Total packets processed at input %1 : %2").arg(i+1).arg(r->inpAdaptors[i]->processedPackets));
+            nsInterface->mlog(QString("Total packets processed at input %1 : %2").arg(i+1).arg(r->inpAdaptors[i]->processedPackets));
 
         // # packets at Output
         for(int i = 0; i < r->numOutputs; ++i)
-            nsInterface->log(QString("Total packets processed at output %1 : %2").arg(i+1).arg(r->outAdaptors[i]->processedPackets));
+            nsInterface->mlog(QString("Total packets processed at output %1 : %2").arg(i+1).arg(r->outAdaptors[i]->processedPackets));
 
         // # Packets per Queue
         for(int i = 0; i < r->numOutputs; ++i)
         {
-            nsInterface->log(QString("For output link : %1").arg(i + 1));
+            nsInterface->mlog(QString("For output link : %1").arg(i + 1));
 
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->log(QString(" Total packets processed at Queue %1 : %2").arg(j + 1).arg(r->outAdaptors[i]->pPerQueue[j]));
+                nsInterface->mlog(QString(" Total packets processed at Queue %1 : %2").arg(j + 1).arg(r->outAdaptors[i]->pPerQueue[j]));
         }
 
-        nsInterface->log("Mean # of packets in residence (r)");
+        nsInterface->mlog("Mean # of packets in residence (r)");
 
         int t;
         // r
         for(int i = 0; i < r->numOutputs; ++i)
         {
-            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+            nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
             t = i * r->numQueues[i];
 
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->log(QString("  Queue %1 : %2").arg(j + 1).arg(r->meanNumResidentItemsPerQueue[t + j]));
+                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->meanNumResidentItemsPerQueue[t + j]));
         }
 
-        nsInterface->log("Max # of packets in residence (R)");
+        nsInterface->mlog("Max # of packets in residence (R)");
 
         // R
         for(int i = 0; i < r->numOutputs; ++i)
         {
-            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+            nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
             t = i * r->numQueues[i];
 
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->log(QString("  Queue %1 : %2").arg(j + 1).arg(r->maxNPacketsPerQueue[t + j]));
+                nsInterface->mlog(QString("  Queue %1 : %2").arg(j + 1).arg(r->maxNPacketsPerQueue[t + j]));
         }
 
-        nsInterface->log("Mean Residence Time (Tr)");
+        nsInterface->mlog("Mean Residence Time (Tr)");
 
         // Tr
         for(int i = 0; i < r->numOutputs; ++i)
         {
-            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+            nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
             t = i * r->numQueues[i];
 
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->log(QString("  Queue %1 : %2 secs").arg(j + 1).arg(r->meanResidenceTimePerQueue[t + j]));
+                nsInterface->mlog(QString("  Queue %1 : %2 secs").arg(j + 1).arg(r->meanResidenceTimePerQueue[t + j]));
 
         }
 
-        nsInterface->log("Max Residence Time (Max Tr)");
+        nsInterface->mlog("Max Residence Time (Max Tr)");
 
         // Max Tr
         for(int i = 0; i < r->numOutputs; ++i)
         {
-            nsInterface->log(QString(" For output link : %1").arg(i + 1));
+            nsInterface->mlog(QString(" For output link : %1").arg(i + 1));
 
             t = i * r->numQueues[i];
 
             for(int j = 0; j < r->numQueues[i]; ++j)
-                nsInterface->log(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 secs").arg(j + 1).arg(r->maxResTimePerQueue[t + j]));
+                nsInterface->mlog(QString("  Max Residence Time(Max Tr) at Queue %1 : %2 secs").arg(j + 1).arg(r->maxResTimePerQueue[t + j]));
 
         }
 
@@ -277,9 +281,9 @@ void Network::performAnalysis()
     float endTime = std::time(0) - startTime;
 
     //for(int i = 0; i < numRouters; ++i)
-        //nsInterface->log(QString("Total execution time router r%1 : %2 secs").arg(i + 1).arg(routers[i]->endTime));
+        //nsInterface->mlog(QString("Total execution time router r%1 : %2 secs").arg(i + 1).arg(routers[i]->endTime));
 
-    nsInterface->log(QString("Simulation complete. Total execution time : %1 secs").arg(endTime));
+    nsInterface->mlog(QString("Simulation complete. Total execution time : %1 secs").arg(endTime));
 }
 
 void Network::stop()
@@ -306,4 +310,6 @@ void Network::setInterfaceObj(Interface *nsInterface)
 
 Network::~Network()
 {
+    for(int i = 0; i < numRouters; ++i)
+        delete routers[i];
 }

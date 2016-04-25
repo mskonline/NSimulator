@@ -20,5 +20,5 @@ void Link::transfer(packet p)
 
 void Link::printInfo()
 {
-    qDebug() << "Destination router is : " << this->destinationRouter->name;
+    qDebug() << "Destination router is : " << this->destinationRouter->rname;
 }
