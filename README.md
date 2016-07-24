@@ -8,8 +8,11 @@ The goal of NSimulator is to simulate traffic flowing through a router, measure 
 Network Routers layout:
 ![Alt text](./docs/Network_Links_and_Ports.png?raw=true "Network Routers layout")
 
-Router Architecture:
-![Alt text](./docs/architecture_p2.png?raw=true "Router Architecture")
+Border Router Architecture:
+![Alt text](./docs/Border.png?raw=true "Border Router Architecture")
+
+Internal Router Architecture:
+![Alt text](./docs/Internal_Routers.png?raw=true "Internal Router Architecture")
 
 Input Adapter:
 * Reads the packet from input file into the input queue
